@@ -1,7 +1,6 @@
 package de.muehlencord.osmproxy.business.config.entity;
 
 import com.google.gson.annotations.Expose;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Objects;
 
