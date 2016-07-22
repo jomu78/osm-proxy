@@ -5,9 +5,12 @@ import de.muehlencord.osmproxy.business.config.entity.Cache;
 import de.muehlencord.osmproxy.business.config.boundary.ConfigurationBuilder;
 import de.muehlencord.osmproxy.business.config.entity.Configuration;
 import de.muehlencord.osmproxy.business.config.entity.Layer;
+import de.muehlencord.osmproxy.business.config.entity.Server;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
+import java.util.stream.Collectors;
 import javax.ejb.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,7 +36,7 @@ public class ConfigurationBean {
                 if (path.toFile().exists()) {
                     try {
                         configuration = ConfigurationBuilder.fromFile(path);
-                        LOGGER.info("Loaded configuration from {}", path.toString());                          
+                        LOGGER.info("Loaded configuration from {}", path.toString());
                     } catch (ConfigurationException ex) {
                         LOGGER.error("Cannot load configuration from file. Reason: " + ex.toString(), ex);
                         configuration = null;
@@ -47,11 +50,11 @@ public class ConfigurationBean {
                 configuration = null;
             }
         }
-        
+
         if (configuration == null) {
             throw new ConfigurationException("Invalid configuration, see log for details");
         }
-        
+
         return configuration;
     }
 
@@ -71,6 +74,14 @@ public class ConfigurationBean {
             throw new ConfigurationException("unable to resolve path from cache and layer");
         }
         return path;
+    }
+
+    public List<Server> getUpstreamServer(String layerName) throws ConfigurationException {
+        Layer layer = getConfiguration().getLayer(layerName);
+        if (layer == null) {
+            throw new ConfigurationException("layer " + layerName + " is not defined");
+        }
+        return layer.getUpstream();
     }
 
 }
