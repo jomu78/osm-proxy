@@ -232,27 +232,43 @@ public class ProxyResource {
 
     private RequestConfig getRequestConfig(URL url) {
         String httpProxyHost = null;
+        String httpProxyPortString = null;
         Integer httpProxyPort = null;
         String urlHostString = url.getProtocol() + "://" + url.getHost();
-        String nonProxyHosts = System.getProperty("http.nonProxyHosts");        
+        String nonProxyHosts = System.getProperty("http.nonProxyHosts");
 
         HttpHost httpProxy = null;
         if (matchesNonProxyHosts(nonProxyHosts, urlHostString)) {
             LOGGER.debug("Using no proxy, as {} matches nonProxyHosts {}", url.toString(), nonProxyHosts);
         } else {
+            LOGGER.debug ("Checking proxy settings"); 
+            String prefix;
             if (url.getProtocol().toLowerCase(Locale.US).contains("https")) {
-                httpProxyHost = System.getProperty("https.proxyHost");
-                httpProxyPort = Integer.parseInt(System.getProperty("https.proxyPort"));
-            } else if (url.getProtocol().toLowerCase(Locale.US).contains("http")) {
-                httpProxyHost = System.getProperty("http.proxyHost");
-                httpProxyPort = Integer.parseInt(System.getProperty("http.proxyPort"));
+                prefix = "https";
+            } else {
+                prefix = "http";
             }
+
+            httpProxyHost = System.getProperty(prefix + ".proxyHost");
+            LOGGER.debug(prefix + ".proxyHost = {}", httpProxyHost);
+            httpProxyPortString = System.getProperty(prefix + ".proxyPort");
+            LOGGER.debug(prefix + ".proxyPort = {}", httpProxyPortString);
+            if ((httpProxyPortString == null) || (httpProxyPortString.equals(""))) {
+                httpProxyPort = 0;
+            } else {
+                try {
+                    httpProxyPort = Integer.parseInt(System.getProperty("https.proxyPort"));
+                } catch (NumberFormatException ex) {
+                    LOGGER.error("Cannot parse proxy port, {} is not a valid number", httpProxyPortString);
+                }
+            }
+
             if (httpProxyHost != null && httpProxyPort != null && !httpProxyPort.equals(0)) {
                 httpProxy = new HttpHost(httpProxyHost, httpProxyPort, "http");
-                LOGGER.debug ("Using proxy {}:{} to connect to {}", httpProxyHost, httpProxyPort, url.toString());
-            }
+                LOGGER.debug("Using proxy {}:{} to connect to {}", httpProxyHost, httpProxyPort, url.toString());
+            } else LOGGER.debug ("Using no proxy to connect to {}", url.toString());
         }
-      
+
         RequestConfig config = RequestConfig.custom()
                 .setProxy(httpProxy)
                 .build();
