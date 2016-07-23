@@ -2,8 +2,8 @@
 <html>
   <head>
     <title>Simple Map</title>
-    <link rel="stylesheet" href="http://localhost:8080/osmproxy/openlayers/ol.css" type="text/css">
-    <script src="http://localhost:8080/osmproxy/openlayers/ol.js"></script>
+    <link rel="stylesheet" href="openlayers/ol.css" type="text/css">
+    <script src="openlayers/ol.js"></script>
   </head>
   <body>
     <div id="map" class="map"></div>
@@ -16,7 +16,7 @@
                 ol.source.OSM.ATTRIBUTION
               ],
               opaque: false,
-              url: 'http://localhost:8080/osmproxy/web/rest/tiles/{z}/{x}/{y}.png'
+              url: 'web/rest/tiles/{z}/{x}/{y}.png'
             })
           })
         ],
