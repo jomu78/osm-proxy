@@ -98,12 +98,14 @@ public class ProxyResource {
                 .resolve(x.toString())
                 .resolve(y.toString() + "." + ending);
 
+        Response response;
         if (tile.toFile().exists()) {
-            return respondTileFromDiskCache(tile, layer, z, x, y, ending);
+            response = respondTileFromDiskCache(tile, layer, z, x, y, ending);
         } else {
-            return respondTileFromUpstreamServer(userAgent, tile, layer, z, x, y, ending);
-
+            response = respondTileFromUpstreamServer(userAgent, tile, layer, z, x, y, ending);
         }
+        response.getHeaders().add ("Access-Control-Allow-Origin", "*"); 
+        return response;
     }
 
     private Response respondTileFromDiskCache(Path tilePath, String layer, Long x, Long y, Long z, String ending) {
