@@ -14,6 +14,9 @@ public class Server {
     
     @Expose
     private String url;
+    
+    @Expose
+    private String userAgent;
 
     public Server(String name, String url) {
         this.name = name;
@@ -38,11 +41,20 @@ public class Server {
         return this;
     }
 
+    public String getUserAgent() {
+        return userAgent;
+    }
+
+    public void setUserAgent(String userAgent) {
+        this.userAgent = userAgent;
+    }
+
     @Override
     public int hashCode() {
         int hash = 7;
-        hash = 43 * hash + Objects.hashCode(this.name);
-        hash = 43 * hash + Objects.hashCode(this.url);
+        hash = 79 * hash + Objects.hashCode(this.name);
+        hash = 79 * hash + Objects.hashCode(this.url);
+        hash = 79 * hash + Objects.hashCode(this.userAgent);
         return hash;
     }
 
@@ -64,13 +76,6 @@ public class Server {
         if (!Objects.equals(this.url, other.url)) {
             return false;
         }
-        return true;
-    }
-    
-    
-    
-    
-    
-    
-    
+        return Objects.equals(this.userAgent, other.userAgent);
+    }                                   
 }

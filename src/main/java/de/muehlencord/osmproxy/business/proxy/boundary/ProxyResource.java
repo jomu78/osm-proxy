@@ -11,6 +11,7 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Iterator;
 import java.util.List;
@@ -52,14 +53,6 @@ public class ProxyResource {
     private static final Logger LOGGER = LoggerFactory.getLogger(ProxyResource.class);
 
     @GET
-    @Produces("text/plain")
-    @javax.ws.rs.Path("/hello")
-    public String hellowWorld() {
-        // Return some cliched textual content
-        return "Hello World";
-    }
-
-    @GET
     @Produces({"image/png", "text/plain"})
     @javax.ws.rs.Path("/{layer}/{z}/{x}/{y}.{ending}")
     public Response getTile(
@@ -81,7 +74,7 @@ public class ProxyResource {
             LOGGER.debug("Requesting tile {}/{}/{}/{}.{}", layer, z, x, y, ending);
         }
 
-        Path layerCacheFolder = null;
+        Path layerCacheFolder;
         try {
             layerCacheFolder = configurationBean.getCacheDirectory(layer);
         } catch (ConfigurationException ex) {
@@ -104,26 +97,53 @@ public class ProxyResource {
         } else {
             response = respondTileFromUpstreamServer(userAgent, tile, layer, z, x, y, ending);
         }
-        response.getHeaders().add ("Access-Control-Allow-Origin", "*"); 
+        response.getHeaders().add("Access-Control-Allow-Origin", "*");
         return response;
     }
 
     private Response respondTileFromDiskCache(Path tilePath, String layer, Long x, Long y, Long z, String ending) {
         byte[] imageData;
+        BufferedImage image = null;
         try {
-            BufferedImage image = ImageIO.read(tilePath.toFile());
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-
-            ImageIO.write(image, "png", baos);
-            imageData = baos.toByteArray();
+            image = ImageIO.read(tilePath.toFile());
         } catch (IOException ex) {
-            LOGGER.error(ex.toString(), ex);
-            return createErrorResponse("error while reading tile from cache", HttpURLConnection.HTTP_INTERNAL_ERROR);
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("Cannot read image from file {}", tilePath.toString());
+            }
         }
 
-        // uncomment line below to send non-streamed
-        LOGGER.debug("served tile " + layer + "/" + z + "/" + y + "/" + x + "." + ending + " from cache");
-        return Response.ok(imageData).type(new MediaType("image", "png")).build();
+        if (image == null) {
+            try {
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("Cannot construct image from file {}, going to delete file", tilePath.toString());
+                }
+                Files.delete(tilePath);
+                LOGGER.error("Deleted broken file {}", tilePath.toString());
+            } catch (IOException ex) {
+                LOGGER.error("Cannot delete broken file {}", tilePath.toString());
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug(ex.toString(), ex);
+                }
+            }
+            return createErrorResponse("error while reading tile from cache", HttpURLConnection.HTTP_INTERNAL_ERROR);
+        } else {
+
+            try {
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                ImageIO.write(image, "png", baos);
+                imageData = baos.toByteArray();
+            } catch (IOException ex) {
+                LOGGER.error(ex.toString());
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug(ex.toString(), ex);
+                }
+                return createErrorResponse("error while reading tile from cache", HttpURLConnection.HTTP_INTERNAL_ERROR);
+            }
+
+            // uncomment line below to send non-streamed
+            LOGGER.debug("served tile " + layer + "/" + z + "/" + y + "/" + x + "." + ending + " from cache");
+            return Response.ok(imageData).type(new MediaType("image", "png")).build();
+        }
     }
 
     private Response respondTileFromUpstreamServer(String userAgent, Path tilePath, String layer, Long z, Long x, Long y, String ending) {
@@ -168,13 +188,21 @@ public class ProxyResource {
             try {
                 URL url = new URL(urlString);
                 RequestConfig config = getRequestConfig(url);
-                LOGGER.debug("Trying to download tile from upstream server {}", urlString);
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("Trying to download tile from upstream server {}", urlString);
+                }
 
                 httpClient = HttpClients.createDefault();
                 HttpGet httpget = new HttpGet(url.toURI());
                 httpget.setConfig(config);
 
-                httpget.setHeader("User-Agent", userAgent);
+                // check if userAgent is set for server, if yes, use this one
+                // if not, use userAgent from client (default)
+                if (currentServer.getUserAgent() == null) {
+                    httpget.setHeader("User-Agent", userAgent);
+                } else {
+                    httpget.setHeader("User-Agent", currentServer.getUserAgent());
+                }
                 httpget.setHeader("Accept-Encoding", "deflate"); // TODO add gzip support
                 httpget.setHeader("Cache-Control", "max-age=0");
                 httpget.setHeader("Accept-Language", "en-US");
@@ -222,8 +250,10 @@ public class ProxyResource {
 
     private Response createErrorResponse(String message, int status, Exception ex) {
         LOGGER.error("request error: " + message);
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug(ex.toString(), ex);
+        if (ex != null) {
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug(ex.toString(), ex);
+            }
         }
         return Response.status(status)
                 .entity(message)
@@ -233,17 +263,22 @@ public class ProxyResource {
     }
 
     private RequestConfig getRequestConfig(URL url) {
-        String httpProxyHost = null;
-        String httpProxyPortString = null;
+        String httpProxyHost;
+        String httpProxyPortString;
         Integer httpProxyPort = null;
         String urlHostString = url.getProtocol() + "://" + url.getHost();
         String nonProxyHosts = System.getProperty("http.nonProxyHosts");
 
         HttpHost httpProxy = null;
         if (matchesNonProxyHosts(nonProxyHosts, urlHostString)) {
-            LOGGER.debug("Using no proxy, as {} matches nonProxyHosts {}", url.toString(), nonProxyHosts);
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("Using no proxy, as {} matches nonProxyHosts {}", url.toString(), nonProxyHosts);
+            }
+
         } else {
-            LOGGER.debug ("Checking proxy settings"); 
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("Checking proxy settings");
+            }
             String prefix;
             if (url.getProtocol().toLowerCase(Locale.US).contains("https")) {
                 prefix = "https";
@@ -252,9 +287,13 @@ public class ProxyResource {
             }
 
             httpProxyHost = System.getProperty(prefix + ".proxyHost");
-            LOGGER.debug(prefix + ".proxyHost = {}", httpProxyHost);
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug(prefix + ".proxyHost = {}", httpProxyHost);
+            }
             httpProxyPortString = System.getProperty(prefix + ".proxyPort");
-            LOGGER.debug(prefix + ".proxyPort = {}", httpProxyPortString);
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug(prefix + ".proxyPort = {}", httpProxyPortString);
+            }
             if ((httpProxyPortString == null) || (httpProxyPortString.equals(""))) {
                 httpProxyPort = 0;
             } else {
@@ -267,8 +306,14 @@ public class ProxyResource {
 
             if (httpProxyHost != null && httpProxyPort != null && !httpProxyPort.equals(0)) {
                 httpProxy = new HttpHost(httpProxyHost, httpProxyPort, "http");
-                LOGGER.debug("Using proxy {}:{} to connect to {}", httpProxyHost, httpProxyPort, url.toString());
-            } else LOGGER.debug ("Using no proxy to connect to {}", url.toString());
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("Using proxy {}:{} to connect to {}", httpProxyHost, httpProxyPort, url.toString());
+                }
+            } else {
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("Using no proxy to connect to {}", url.toString());
+                }
+            }
         }
 
         RequestConfig config = RequestConfig.custom()
