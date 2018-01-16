@@ -71,17 +71,25 @@ public class ProxyResource {
     @EJB
     private ConfigurationBean configurationBean;
 
-    private final CloseableHttpClient client;
+    private final CloseableHttpClient httpClient;
 
     public ProxyResource() {
-        client = HttpClients.createDefault();
+        httpClient = HttpClients.createDefault();
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Created new httpClient"); 
+        }        
+        
     }
 
     @PreDestroy
     void preDestroy() {
-        if (client != null) {
+        if (httpClient != null) {
             try {
-                client.close();
+                httpClient.close();
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("httpClient shutdown"); 
+                }                
+                
             } catch (IOException ex) {
                 if (LOGGER.isDebugEnabled()) {
                     LOGGER.debug(ex.toString(), ex);
@@ -246,7 +254,6 @@ public class ProxyResource {
                 httpget.setHeader("Accept-Encoding", "deflate"); // TODO add gzip support
                 httpget.setHeader("Accept-Language", "en-US");
 
-                CloseableHttpClient httpClient = HttpClients.createDefault();
                 HttpResponse response = httpClient.execute(httpget);
                 HttpEntity entity = response.getEntity();
                 if (entity != null) {
