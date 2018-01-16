@@ -31,13 +31,11 @@ import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
+import javax.annotation.PreDestroy;
 import javax.ejb.EJB;
 import javax.ejb.Stateless;
 import javax.imageio.ImageIO;
@@ -53,9 +51,9 @@ import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpGet;
-
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -68,10 +66,31 @@ import org.slf4j.LoggerFactory;
 @javax.ws.rs.Path("rest")
 public class ProxyResource {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(ProxyResource.class);
+
     @EJB
     private ConfigurationBean configurationBean;
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ProxyResource.class);
+    private final CloseableHttpClient client;
+
+    public ProxyResource() {
+        client = HttpClients.createDefault();
+    }
+
+    @PreDestroy
+    void preDestroy() {
+        if (client != null) {
+            try {
+                client.close();
+            } catch (IOException ex) {
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug(ex.toString(), ex);
+                } else {
+                    LOGGER.error(ex.toString());
+                }
+            }
+        }
+    }
 
     @GET
     @Produces({"image/png", "text/plain"})
@@ -204,8 +223,6 @@ public class ProxyResource {
             urlString = urlString.replace("{y}", Long.toString(y));
             urlString = urlString.replace("{ending}", ending);
 
-            CloseableHttpClient httpClient = null;
-
             try {
                 URL url = new URL(urlString);
                 RequestConfig config = getRequestConfig(url);
@@ -213,7 +230,6 @@ public class ProxyResource {
                     LOGGER.debug("Trying to download tile from upstream server {}", urlString);
                 }
 
-                httpClient = HttpClients.createDefault();
                 HttpGet httpget = new HttpGet(url.toURI());
                 httpget.setConfig(config);
 
@@ -225,9 +241,9 @@ public class ProxyResource {
                     httpget.setHeader("User-Agent", currentServer.getUserAgent());
                 }
                 httpget.setHeader("Accept-Encoding", "deflate"); // TODO add gzip support
-                httpget.setHeader("Cache-Control", "max-age=0");
                 httpget.setHeader("Accept-Language", "en-US");
 
+                CloseableHttpClient httpClient = HttpClients.createDefault();
                 HttpResponse response = httpClient.execute(httpget);
                 HttpEntity entity = response.getEntity();
                 if (entity != null) {
@@ -252,16 +268,9 @@ public class ProxyResource {
                                 .entity("upstream server url is not valid")
                                 .build()
                 );
-            } finally {
-                if (httpClient != null) {
-                    try {
-                        httpClient.close();
-                    } catch (IOException ex) {
-                        LOGGER.debug("error while closing httpClient ", ex);
-                    }
-                }
             }
         }
+
         return false;
     }
 
@@ -386,13 +395,14 @@ public class ProxyResource {
     private boolean isInRetentionTime(Path tile) {
         try {
             int retentionTime = configurationBean.getRetentionTime();
-            
+
             // ir retentionTime is set to 0, disable cache retention and asume file is still in retention time
             if (retentionTime == 0) {
                 return true;
             }
             LocalDateTime minFileDate = LocalDateTime.now().minusDays(retentionTime);
-            BasicFileAttributes attr = Files.readAttributes(tile, BasicFileAttributes.class);
+            BasicFileAttributes attr = Files.readAttributes(tile, BasicFileAttributes.class
+            );
             LocalDateTime lastModifiedDate = LocalDateTime.ofInstant(attr.lastModifiedTime().toInstant(), ZoneId.systemDefault());
             return lastModifiedDate.isAfter(minFileDate);
         } catch (ConfigurationException | IOException ex) {
