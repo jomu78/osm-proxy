@@ -150,7 +150,7 @@ public class ProxyResource {
         return response;
     }
 
-    private Response respondTileFromDiskCache(Path tilePath, String layer, Long x, Long y, Long z, String ending) {
+    private Response respondTileFromDiskCache(Path tilePath, String layer, Long z, Long x, Long y, String ending) {
         byte[] imageData;
         BufferedImage image = null;
         // try to load image from disk 
@@ -179,9 +179,8 @@ public class ProxyResource {
                     LOGGER.debug(ex.toString(), ex);
                 }
                 return createErrorResponse("error while reading tile from cache", HttpURLConnection.HTTP_INTERNAL_ERROR);
-            }
-            // uncomment line below to send non-streamed
-            LOGGER.debug("served tile " + layer + "/" + z + "/" + y + "/" + x + "." + ending + " from cache");
+            }           
+            LOGGER.debug("served tile {}/{}/{}/{}.{} from cache", layer, z, x, y, ending);
             return Response.ok(imageData).type(new MediaType("image", "png")).build();
         }
     }
