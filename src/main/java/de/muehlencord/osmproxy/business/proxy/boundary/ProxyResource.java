@@ -28,6 +28,12 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
@@ -100,15 +106,24 @@ public class ProxyResource {
             return createErrorResponse("cannot get cache folder from configuration", HttpURLConnection.HTTP_INTERNAL_ERROR, ex);
         }
 
-        // load image from disk
+        // calculate file to load from disk
         Path tile = layerCacheFolder
                 .resolve(z.toString())
                 .resolve(x.toString())
                 .resolve(y.toString() + "." + ending);
 
         Response response;
+        // check if the tile exist
+        // if yes and in retention time - serv it from disk
+        // if yes and no longer in retention time - delete it from cache and serv it from upstream
+        // it not, serv it from upstream
         if (tile.toFile().exists()) {
-            response = respondTileFromDiskCache(tile, layer, z, x, y, ending);
+            if (isInRetentionTime(tile)) {
+                response = respondTileFromDiskCache(tile, layer, z, x, y, ending);
+            } else {
+                deleteTile(tile, "delete outdated file {}");
+                response = respondTileFromUpstreamServer(userAgent, tile, layer, z, x, y, ending);
+            }
         } else {
             response = respondTileFromUpstreamServer(userAgent, tile, layer, z, x, y, ending);
         }
@@ -119,6 +134,8 @@ public class ProxyResource {
     private Response respondTileFromDiskCache(Path tilePath, String layer, Long x, Long y, Long z, String ending) {
         byte[] imageData;
         BufferedImage image = null;
+        // try to load image from disk 
+        // if fails, image is broken and file needs to be deleted from disk
         try {
             image = ImageIO.read(tilePath.toFile());
         } catch (IOException ex) {
@@ -126,23 +143,13 @@ public class ProxyResource {
                 LOGGER.debug("Cannot read image from file {}", tilePath.toString());
             }
         }
-
         if (image == null) {
-            try {
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("Cannot construct image from file {}, going to delete file", tilePath.toString());
-                }
-                Files.delete(tilePath);
-                LOGGER.error("Deleted broken file {}", tilePath.toString());
-            } catch (IOException ex) {
-                LOGGER.error("Cannot delete broken file {}", tilePath.toString());
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug(ex.toString(), ex);
-                }
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("Cannot construct image from file {}, going to delete file", tilePath.toString());
             }
+            deleteTile(tilePath, "Deleted broken file {}");
             return createErrorResponse("error while reading tile from cache", HttpURLConnection.HTTP_INTERNAL_ERROR);
         } else {
-
             try {
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 ImageIO.write(image, "png", baos);
@@ -154,7 +161,6 @@ public class ProxyResource {
                 }
                 return createErrorResponse("error while reading tile from cache", HttpURLConnection.HTTP_INTERNAL_ERROR);
             }
-
             // uncomment line below to send non-streamed
             LOGGER.debug("served tile " + layer + "/" + z + "/" + y + "/" + x + "." + ending + " from cache");
             return Response.ok(imageData).type(new MediaType("image", "png")).build();
@@ -359,6 +365,46 @@ public class ProxyResource {
             }
         }
         return false;
+    }
+
+    private void deleteTile(Path tilePath, String deleteReason) {
+        if (tilePath.toFile().exists()) {
+            try {
+                Files.delete(tilePath);
+                LOGGER.error(deleteReason, tilePath.toString());
+            } catch (IOException ex) {
+                LOGGER.error("error during " + deleteReason, tilePath.toString());
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug(ex.toString(), ex);
+                }
+            }
+        } else if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("Tile {} does not exist, skipping deletion", tilePath.toFile().toString());
+        }
+    }
+
+    private boolean isInRetentionTime(Path tile) {
+        try {
+            int retentionTime = configurationBean.getRetentionTime();
+            
+            // ir retentionTime is set to 0, disable cache retention and asume file is still in retention time
+            if (retentionTime == 0) {
+                return true;
+            }
+            LocalDateTime minFileDate = LocalDateTime.now().minusDays(retentionTime);
+            BasicFileAttributes attr = Files.readAttributes(tile, BasicFileAttributes.class);
+            LocalDateTime lastModifiedDate = LocalDateTime.ofInstant(attr.lastModifiedTime().toInstant(), ZoneId.systemDefault());
+            return lastModifiedDate.isAfter(minFileDate);
+        } catch (ConfigurationException | IOException ex) {
+            // if an erro occurs we cannot say whether the file is 
+            // in retention time or not - so we asume yes to keep the file in the cache
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug(ex.toString(), ex);
+            } else {
+                LOGGER.error(ex.toString());
+            }
+            return true;
+        }
     }
 
 }

@@ -31,13 +31,30 @@ public class Cache {
     @Expose
     private String path;
 
+    @Expose
+    private Integer retentionTime;
+
+    public Cache() {
+        this.name = null;
+        this.path = null;
+        this.retentionTime = 0; // default retention time of 0 - disable cache expiry
+    }
+
     public Cache(String name) {
         this.name = name;
+        this.path = null;
+        this.retentionTime = 0; // default retention time of 0 - disable cache expiry
     }
 
     public Cache(String name, String path) {
         this.name = name;
         this.path = path;
+    }
+
+    public Cache(String name, String path, int retentionTime) {
+        this.name = name;
+        this.path = path;
+        this.retentionTime = retentionTime;
     }
 
     /* *** getter / setter *** */
@@ -61,6 +78,14 @@ public class Cache {
     public Cache setPath(String path) {
         this.path = path;
         return this;
+    }
+
+    public Integer getRetentionTime() {
+        return retentionTime;
+    }
+
+    public void setRetentionTime(int retentionTime) {
+        this.retentionTime = retentionTime;
     }
 
     /* equals / hashCode */

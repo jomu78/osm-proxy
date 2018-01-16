@@ -130,4 +130,17 @@ public class ConfigurationBean {
         return layer.getUpstream();
     }
 
+    public int getRetentionTime() throws ConfigurationException {
+        Cache cache = getConfiguration().getCache();
+        if (cache == null) {
+            throw new ConfigurationException("no cache defined");
+        }
+        Integer retentionTime = cache.getRetentionTime();
+        if (retentionTime == null) {
+            throw new ConfigurationException("retentionTime is not defined");
+        } else {
+            return retentionTime;
+        }
+    }
+
 }
