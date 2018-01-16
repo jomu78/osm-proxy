@@ -107,6 +107,10 @@ public class ProxyResource {
             return createErrorResponse("<layer>/<z>/<x>/<y>.<filetype> parameter is mandatory", HttpURLConnection.HTTP_BAD_REQUEST);
         }
 
+        if (z < 0 || (z > 16)) {
+            return createErrorResponse("parameter z must be between 0 and 16", HttpURLConnection.HTTP_BAD_REQUEST);
+        }
+
         if (!ending.equals("png")) {
             return createErrorResponse("png is currently supported only", HttpURLConnection.HTTP_BAD_REQUEST);
         }
@@ -179,7 +183,7 @@ public class ProxyResource {
                     LOGGER.debug(ex.toString(), ex);
                 }
                 return createErrorResponse("error while reading tile from cache", HttpURLConnection.HTTP_INTERNAL_ERROR);
-            }           
+            }
             LOGGER.debug("served tile {}/{}/{}/{}.{} from cache", layer, z, x, y, ending);
             return Response.ok(imageData).type(new MediaType("image", "png")).build();
         }
