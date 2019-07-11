@@ -1,12 +1,13 @@
 package de.muehlencord.osmproxy.business.boundary;
 
-import de.muehlencord.osmproxy.business.config.entity.Layer;
-import de.muehlencord.osmproxy.business.config.entity.Server;
-import de.muehlencord.osmproxy.business.config.entity.Configuration;
 import de.muehlencord.osmproxy.business.config.boundary.ConfigurationBuilder;
 import de.muehlencord.osmproxy.business.config.entity.Cache;
-import org.junit.Test;
-import static org.junit.Assert.*;
+import de.muehlencord.osmproxy.business.config.entity.Configuration;
+import de.muehlencord.osmproxy.business.config.entity.Layer;
+import de.muehlencord.osmproxy.business.config.entity.Server;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import org.junit.jupiter.api.Test;
 
 /**
  *

@@ -41,8 +41,8 @@ import javax.ejb.Stateless;
 import javax.imageio.ImageIO;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
-import javax.ws.rs.Produces;
 import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -53,7 +53,6 @@ import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -76,9 +75,9 @@ public class ProxyResource {
     public ProxyResource() {
         httpClient = HttpClients.createDefault();
         if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Created new httpClient"); 
-        }        
-        
+            LOGGER.debug("Created new httpClient");
+        }
+
     }
 
     @PreDestroy
@@ -87,14 +86,13 @@ public class ProxyResource {
             try {
                 httpClient.close();
                 if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("httpClient shutdown"); 
-                }                
-                
+                    LOGGER.debug("httpClient shutdown");
+                }
+
             } catch (IOException ex) {
+                LOGGER.error(ex.getMessage());
                 if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug(ex.toString(), ex);
-                } else {
-                    LOGGER.error(ex.toString());
+                    LOGGER.debug("Detailed stacktrace", new Object[]{ex});
                 }
             }
         }
@@ -130,9 +128,9 @@ public class ProxyResource {
         try {
             layerCacheFolder = configurationBean.getCacheDirectory(layer);
         } catch (ConfigurationException ex) {
-            LOGGER.error(ex.toString());
+            LOGGER.error(ex.getMessage());
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug(ex.toString(), ex);
+                LOGGER.debug("Detailed stacktrace", new Object[]{ex});
             }
             return createErrorResponse("cannot get cache folder from configuration", HttpURLConnection.HTTP_INTERNAL_ERROR, ex);
         }
@@ -170,8 +168,10 @@ public class ProxyResource {
         try {
             image = ImageIO.read(tilePath.toFile());
         } catch (IOException ex) {
+
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("Cannot read image from file {}", tilePath.toString());
+                LOGGER.debug("Detailed stacktrace", new Object[]{ex});
             }
         }
         if (image == null) {
@@ -186,7 +186,6 @@ public class ProxyResource {
                 ImageIO.write(image, "png", baos);
                 imageData = baos.toByteArray();
             } catch (IOException ex) {
-                LOGGER.error(ex.toString());
                 if (LOGGER.isDebugEnabled()) {
                     LOGGER.debug(ex.toString(), ex);
                 }
@@ -207,6 +206,9 @@ public class ProxyResource {
         try {
             fileDownloaded = downloadFromUpStreamServer(userAgent, tilePath, layer, z, x, y, ending);
         } catch (ConfigurationException ex) {
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("Detailed stacktrace", new Object[]{ex});
+            }
             return createErrorResponse(ex.getMessage(), HttpURLConnection.HTTP_INTERNAL_ERROR, ex);
         }
         if (fileDownloaded) {
@@ -330,7 +332,7 @@ public class ProxyResource {
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug(prefix + ".proxyHost = {}", httpProxyHost);
             }
-            httpProxyPortString = System.getProperty(prefix + ".proxyPort");
+            httpProxyPortString = System.getProperty(prefix + ".proxyPort");            
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug(prefix + ".proxyPort = {}", httpProxyPortString);
             }
@@ -338,8 +340,8 @@ public class ProxyResource {
                 httpProxyPort = 0;
             } else {
                 try {
-                    httpProxyPort = Integer.parseInt(System.getProperty("https.proxyPort"));
-                } catch (NumberFormatException ex) {
+                    httpProxyPort = Integer.parseInt(httpProxyPortString.trim());
+                } catch (NumberFormatException ex) {                    
                     LOGGER.error("Cannot parse proxy port, {} is not a valid number", httpProxyPortString);
                 }
             }
@@ -418,10 +420,9 @@ public class ProxyResource {
         } catch (ConfigurationException | IOException ex) {
             // if an erro occurs we cannot say whether the file is 
             // in retention time or not - so we asume yes to keep the file in the cache
+            LOGGER.error(ex.getMessage());
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug(ex.toString(), ex);
-            } else {
-                LOGGER.error(ex.toString());
+                LOGGER.debug("Detailed stacktrace", new Object[]{ex});
             }
             return true;
         }

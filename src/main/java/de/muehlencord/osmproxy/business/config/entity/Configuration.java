@@ -84,10 +84,7 @@ public class Configuration {
         if (!Objects.equals(this.cache, other.cache)) {
             return false;
         }
-        if (!Objects.equals(this.layerMap, other.layerMap)) {
-            return false;
-        }
-        return true;
+        return Objects.equals(this.layerMap, other.layerMap);
     }
 
 
