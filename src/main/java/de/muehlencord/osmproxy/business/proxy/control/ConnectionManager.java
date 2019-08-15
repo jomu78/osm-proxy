@@ -16,17 +16,23 @@
 package de.muehlencord.osmproxy.business.proxy.control;
 
 import de.muehlencord.osmproxy.business.config.entity.Server;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.Serializable;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.Path;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
+import javax.ejb.AccessTimeout;
+import javax.ejb.Lock;
+import javax.ejb.LockType;
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
 import org.apache.http.HttpEntity;
@@ -47,6 +53,7 @@ import org.slf4j.LoggerFactory;
  */
 @Singleton
 @Startup
+@AccessTimeout(value = 60000)
 public class ConnectionManager implements Serializable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionManager.class);
@@ -58,7 +65,7 @@ public class ConnectionManager implements Serializable {
     public void init() {
         connectionManager = new PoolingHttpClientConnectionManager();
         connectionManager.setMaxTotal(20);
-        connectionManager.setDefaultMaxPerRoute(4);
+        connectionManager.setDefaultMaxPerRoute(2);
     }
 
     @PreDestroy
@@ -70,10 +77,12 @@ public class ConnectionManager implements Serializable {
 
     }
 
+    @Lock(LockType.READ)
     public HttpClientConnectionManager getConnectionManager() {
         return connectionManager;
     }
 
+    @Lock(LockType.READ)
     public RequestConfig getRequestConfig(URL url) {
         String urlHostString = url.getProtocol() + "://" + url.getHost();
         if (requestConfigMap.containsKey(urlHostString)) {
@@ -169,7 +178,8 @@ public class ConnectionManager implements Serializable {
         return false;
     }
 
-    public HttpEntity executeDownload(Server currentServer, String userAgent, String urlString) throws MalformedURLException, URISyntaxException, IOException {
+    @Lock(LockType.READ)
+    public void executeDownload(Server currentServer, String userAgent, String urlString, Path tilePath) throws MalformedURLException, URISyntaxException, IOException {
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Trying to download tile from upstream server {}", urlString);
         }
@@ -185,15 +195,27 @@ public class ConnectionManager implements Serializable {
         } else {
             httpget.setHeader("User-Agent", currentServer.getUserAgent());
         }
-        httpget.setHeader("Accept-Encoding", "deflate"); // TODO add gzip support
+        httpget.setHeader("Accept-Encoding", "gzip,deflate");
         httpget.setHeader("Accept-Language", "en-US");
 
-        CloseableHttpClient httpClient = HttpClients.custom().
-                setConnectionManager(connectionManager).build();
-
+        CloseableHttpClient httpClient = HttpClients.custom().setConnectionManager(connectionManager).build();
         HttpResponse response = httpClient.execute(httpget);
         HttpEntity entity = response.getEntity();
-        return entity;
+        if (entity != null) {
+            saveFile(entity, tilePath);
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("stored {} as {}", urlString, tilePath.toString());
+            }
+        }
+    }
+
+    private void saveFile(HttpEntity entity, Path tilePath) throws IOException {
+        InputStream is = entity.getContent();
+        FileOutputStream fos = new FileOutputStream(tilePath.toFile());
+        int inByte;
+        while ((inByte = is.read()) != -1) {
+            fos.write(inByte);
+        }
     }
 
 }

@@ -21,9 +21,7 @@ import de.muehlencord.osmproxy.business.config.entity.Server;
 import de.muehlencord.osmproxy.business.proxy.control.ConnectionManager;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.Serializable;
 import java.net.HttpURLConnection;
 import java.net.URISyntaxException;
@@ -44,7 +42,6 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import org.apache.http.HttpEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,40 +58,9 @@ public class ProxyResource implements Serializable {
 
     @Inject
     private ConfigurationBean configurationBean;
-    
+
     @Inject
     ConnectionManager connectionManager;
-
-//    private final CloseableHttpClient httpClient;
-
-    public ProxyResource() {
-//        httpClient = HttpClients.custom()
-////                .setConnectionManager(connectionManager.getConnectionManager())                
-//                .build();
-////        httpClient = HttpClients.createDefault();
-//        if (LOGGER.isDebugEnabled()) {
-//            LOGGER.debug("Created new httpClient");
-//        }
-
-    }
-
-//    @PreDestroy
-//    void preDestroy() {
-//        if (httpClient != null) {
-//            try {
-//                httpClient.close();
-//                if (LOGGER.isDebugEnabled()) {
-//                    LOGGER.debug("httpClient shutdown");
-//                }
-//
-//            } catch (IOException ex) {
-//                LOGGER.error(ex.getMessage());
-//                if (LOGGER.isDebugEnabled()) {
-//                    LOGGER.debug("Detailed stacktrace", new Object[]{ex});
-//                }
-//            }
-//        }
-//    }
 
     @GET
     @Produces({"image/png", "text/plain"})
@@ -233,29 +199,14 @@ public class ProxyResource implements Serializable {
             urlString = urlString.replace("{x}", Long.toString(x));
             urlString = urlString.replace("{y}", Long.toString(y));
             urlString = urlString.replace("{ending}", ending);
-
-            try {                
-                HttpEntity entity = connectionManager.executeDownload (currentServer, userAgent, urlString);
-                if (entity != null) {
-                    FileOutputStream fos;
-                    try (InputStream is = entity.getContent()) {
-                        fos = new FileOutputStream(tilePath.toFile());
-                        int inByte;
-                        while ((inByte = is.read()) != -1) {
-                            fos.write(inByte);
-                        }
-                    }
-                    fos.close();
-                }
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("stored {} as {}", urlString, tilePath.toString());
-                }                                                
+            try {
+                connectionManager.executeDownload(currentServer, userAgent, urlString, tilePath);
                 return true;
             } catch (URISyntaxException | IOException ex) {
                 LOGGER.error("cannot construct URL for upstream server. ", urlString);
                 if (LOGGER.isDebugEnabled()) {
                     LOGGER.debug("Detailed stacktrace", new Object[]{ex});
-                }                                                
+                }
                 throw new WebApplicationException(
                         Response.status(HttpURLConnection.HTTP_INTERNAL_ERROR)
                                 .entity("upstream server url is not valid")
@@ -284,14 +235,14 @@ public class ProxyResource implements Serializable {
                 .type(MediaType.TEXT_PLAIN)
                 .build();
     }
- 
+
     private void deleteTile(Path tilePath, String deleteReason) {
         if (tilePath.toFile().exists()) {
             try {
                 Files.delete(tilePath);
                 if (LOGGER.isDebugEnabled()) {
                     LOGGER.debug(deleteReason, tilePath.toString());
-                }                
+                }
             } catch (IOException ex) {
                 LOGGER.error("error during " + deleteReason, tilePath.toString());
                 if (LOGGER.isDebugEnabled()) {
@@ -316,7 +267,7 @@ public class ProxyResource implements Serializable {
             );
             LocalDateTime lastModifiedDate = LocalDateTime.ofInstant(attr.lastModifiedTime().toInstant(), ZoneId.systemDefault());
             return lastModifiedDate.isAfter(minFileDate);
-        } catch (ConfigurationException | IOException ex) {            
+        } catch (ConfigurationException | IOException ex) {
             // if an error occurs we cannot say whether the file is 
             // in retention time or not - so we asume yes to keep the file in the cache
             LOGGER.error(ex.getMessage());
