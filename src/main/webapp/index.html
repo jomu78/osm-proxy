@@ -3,7 +3,7 @@
   <head>
     <title>Simple Map</title>
     <link rel="stylesheet" href="openlayers/ol.css" type="text/css">
-    <script src="openlayers/ol.js"></script>
+    <script src="openlayers/ol.js" charset="UTF-8"></script>
   </head>
   <body>
     <div id="map" class="map"></div>
@@ -16,13 +16,15 @@
                 ol.source.OSM.ATTRIBUTION
               ],
               opaque: false,
-              url: 'web/rest/tiles/{z}/{x}/{y}.png'
+              url: 'web/rest/tiles/{z}/{x}/{y}.png'              
             })
           })
         ],
         target: 'map',
         view: new ol.View({
-          center: [0, 0],
+          center: [0,0],
+          minZoom: 2,
+          maxZoom: 19,
           zoom: 2
         })
       });

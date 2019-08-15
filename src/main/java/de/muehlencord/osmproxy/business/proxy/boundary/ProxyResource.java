@@ -18,14 +18,15 @@ package de.muehlencord.osmproxy.business.proxy.boundary;
 import de.muehlencord.osmproxy.ConfigurationBean;
 import de.muehlencord.osmproxy.business.config.entity.ConfigurationException;
 import de.muehlencord.osmproxy.business.config.entity.Server;
+import de.muehlencord.osmproxy.business.proxy.control.ConnectionManager;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Serializable;
 import java.net.HttpURLConnection;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -33,12 +34,9 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Locale;
-import java.util.regex.Pattern;
-import javax.annotation.PreDestroy;
-import javax.ejb.EJB;
 import javax.ejb.Stateless;
 import javax.imageio.ImageIO;
+import javax.inject.Inject;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
 import javax.ws.rs.PathParam;
@@ -47,12 +45,6 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import org.apache.http.HttpEntity;
-import org.apache.http.HttpHost;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,40 +55,46 @@ import org.slf4j.LoggerFactory;
  */
 @Stateless
 @javax.ws.rs.Path("rest")
-public class ProxyResource {
+public class ProxyResource implements Serializable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ProxyResource.class);
 
-    @EJB
+    @Inject
     private ConfigurationBean configurationBean;
+    
+    @Inject
+    ConnectionManager connectionManager;
 
-    private final CloseableHttpClient httpClient;
+//    private final CloseableHttpClient httpClient;
 
     public ProxyResource() {
-        httpClient = HttpClients.createDefault();
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Created new httpClient");
-        }
+//        httpClient = HttpClients.custom()
+////                .setConnectionManager(connectionManager.getConnectionManager())                
+//                .build();
+////        httpClient = HttpClients.createDefault();
+//        if (LOGGER.isDebugEnabled()) {
+//            LOGGER.debug("Created new httpClient");
+//        }
 
     }
 
-    @PreDestroy
-    void preDestroy() {
-        if (httpClient != null) {
-            try {
-                httpClient.close();
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("httpClient shutdown");
-                }
-
-            } catch (IOException ex) {
-                LOGGER.error(ex.getMessage());
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("Detailed stacktrace", new Object[]{ex});
-                }
-            }
-        }
-    }
+//    @PreDestroy
+//    void preDestroy() {
+//        if (httpClient != null) {
+//            try {
+//                httpClient.close();
+//                if (LOGGER.isDebugEnabled()) {
+//                    LOGGER.debug("httpClient shutdown");
+//                }
+//
+//            } catch (IOException ex) {
+//                LOGGER.error(ex.getMessage());
+//                if (LOGGER.isDebugEnabled()) {
+//                    LOGGER.debug("Detailed stacktrace", new Object[]{ex});
+//                }
+//            }
+//        }
+//    }
 
     @GET
     @Produces({"image/png", "text/plain"})
@@ -113,8 +111,8 @@ public class ProxyResource {
             return createErrorResponse("<layer>/<z>/<x>/<y>.<filetype> parameter is mandatory", HttpURLConnection.HTTP_BAD_REQUEST);
         }
 
-        if (z < 0 || (z > 16)) {
-            return createErrorResponse("parameter z must be between 0 and 16", HttpURLConnection.HTTP_BAD_REQUEST);
+        if (z < 0 || (z > 19)) {
+            return createErrorResponse("parameter z must be between 0 and 19", HttpURLConnection.HTTP_BAD_REQUEST);
         }
 
         if (!ending.equals("png")) {
@@ -236,28 +234,8 @@ public class ProxyResource {
             urlString = urlString.replace("{y}", Long.toString(y));
             urlString = urlString.replace("{ending}", ending);
 
-            try {
-                URL url = new URL(urlString);
-                RequestConfig config = getRequestConfig(url);
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("Trying to download tile from upstream server {}", urlString);
-                }
-
-                HttpGet httpget = new HttpGet(url.toURI());
-                httpget.setConfig(config);
-
-                // check if userAgent is set for server, if yes, use this one
-                // if not, use userAgent from client (default)
-                if (currentServer.getUserAgent() == null) {
-                    httpget.setHeader("User-Agent", userAgent);
-                } else {
-                    httpget.setHeader("User-Agent", currentServer.getUserAgent());
-                }
-                httpget.setHeader("Accept-Encoding", "deflate"); // TODO add gzip support
-                httpget.setHeader("Accept-Language", "en-US");
-
-                HttpResponse response = httpClient.execute(httpget);
-                HttpEntity entity = response.getEntity();
+            try {                
+                HttpEntity entity = connectionManager.executeDownload (currentServer, userAgent, urlString);
                 if (entity != null) {
                     FileOutputStream fos;
                     try (InputStream is = entity.getContent()) {
@@ -269,12 +247,15 @@ public class ProxyResource {
                     }
                     fos.close();
                 }
-                LOGGER.info("stored {} as {}", urlString, tilePath.toString());
-
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("stored {} as {}", urlString, tilePath.toString());
+                }                                                
                 return true;
             } catch (URISyntaxException | IOException ex) {
                 LOGGER.error("cannot construct URL for upstream server. ", urlString);
-                LOGGER.error(ex.toString(), ex);
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("Detailed stacktrace", new Object[]{ex});
+                }                                                
                 throw new WebApplicationException(
                         Response.status(HttpURLConnection.HTTP_INTERNAL_ERROR)
                                 .entity("upstream server url is not valid")
@@ -303,100 +284,18 @@ public class ProxyResource {
                 .type(MediaType.TEXT_PLAIN)
                 .build();
     }
-
-    private RequestConfig getRequestConfig(URL url) {
-        String httpProxyHost;
-        String httpProxyPortString;
-        Integer httpProxyPort = null;
-        String urlHostString = url.getProtocol() + "://" + url.getHost();
-        String nonProxyHosts = System.getProperty("http.nonProxyHosts");
-
-        HttpHost httpProxy = null;
-        if (matchesNonProxyHosts(nonProxyHosts, urlHostString)) {
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("Using no proxy, as {} matches nonProxyHosts {}", url.toString(), nonProxyHosts);
-            }
-
-        } else {
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("Checking proxy settings");
-            }
-            String prefix;
-            if (url.getProtocol().toLowerCase(Locale.US).contains("https")) {
-                prefix = "https";
-            } else {
-                prefix = "http";
-            }
-
-            httpProxyHost = System.getProperty(prefix + ".proxyHost");
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug(prefix + ".proxyHost = {}", httpProxyHost);
-            }
-            httpProxyPortString = System.getProperty(prefix + ".proxyPort");            
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug(prefix + ".proxyPort = {}", httpProxyPortString);
-            }
-            if ((httpProxyPortString == null) || (httpProxyPortString.equals(""))) {
-                httpProxyPort = 0;
-            } else {
-                try {
-                    httpProxyPort = Integer.parseInt(httpProxyPortString.trim());
-                } catch (NumberFormatException ex) {                    
-                    LOGGER.error("Cannot parse proxy port, {} is not a valid number", httpProxyPortString);
-                }
-            }
-
-            if (httpProxyHost != null && httpProxyPort != null && !httpProxyPort.equals(0)) {
-                httpProxy = new HttpHost(httpProxyHost, httpProxyPort, "http");
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("Using proxy {}:{} to connect to {}", httpProxyHost, httpProxyPort, url.toString());
-                }
-            } else {
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("Using no proxy to connect to {}", url.toString());
-                }
-            }
-        }
-
-        RequestConfig config = RequestConfig.custom()
-                .setProxy(httpProxy)
-                .build();
-
-        return config;
-    }
-
-    private boolean matchesNonProxyHosts(String nonProxyHostString, String hostString) {
-        if (nonProxyHostString == null || nonProxyHostString.equals("")) {
-            return false;
-        }
-        String[] nonProxyHosts = nonProxyHostString.split(",");
-        for (String currentNonProxyHost : nonProxyHosts) {
-
-            // "*.fedora-commons.org" -> ".*?\.fedora-commons\.org" 
-            currentNonProxyHost = currentNonProxyHost.replaceAll("\\.", "\\\\.").replaceAll("\\*", ".*?");
-            // a|b|*.c -> (a)|(b)|(.*?\.c)
-            currentNonProxyHost = "(" + currentNonProxyHost.replaceAll("\\|", ")|(") + ")";
-
-            try {
-                if (Pattern.compile(currentNonProxyHost).matcher(hostString).matches()) {
-                    return true;
-                }
-            } catch (Exception e) {
-                LOGGER.error("Creating the nonProxyHosts pattern failed for http.nonProxyHosts={} with the follwing expceiton: ", nonProxyHosts, e);
-            }
-        }
-        return false;
-    }
-
+ 
     private void deleteTile(Path tilePath, String deleteReason) {
         if (tilePath.toFile().exists()) {
             try {
                 Files.delete(tilePath);
-                LOGGER.error(deleteReason, tilePath.toString());
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug(deleteReason, tilePath.toString());
+                }                
             } catch (IOException ex) {
                 LOGGER.error("error during " + deleteReason, tilePath.toString());
                 if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug(ex.toString(), ex);
+                    LOGGER.debug("Detailed stacktrace", new Object[]{ex});
                 }
             }
         } else if (LOGGER.isTraceEnabled()) {
@@ -417,8 +316,8 @@ public class ProxyResource {
             );
             LocalDateTime lastModifiedDate = LocalDateTime.ofInstant(attr.lastModifiedTime().toInstant(), ZoneId.systemDefault());
             return lastModifiedDate.isAfter(minFileDate);
-        } catch (ConfigurationException | IOException ex) {
-            // if an erro occurs we cannot say whether the file is 
+        } catch (ConfigurationException | IOException ex) {            
+            // if an error occurs we cannot say whether the file is 
             // in retention time or not - so we asume yes to keep the file in the cache
             LOGGER.error(ex.getMessage());
             if (LOGGER.isDebugEnabled()) {

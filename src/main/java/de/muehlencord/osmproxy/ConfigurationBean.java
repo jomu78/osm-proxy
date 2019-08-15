@@ -15,10 +15,10 @@
  */
 package de.muehlencord.osmproxy;
 
-import de.muehlencord.osmproxy.business.config.entity.ConfigurationException;
-import de.muehlencord.osmproxy.business.config.entity.Cache;
 import de.muehlencord.osmproxy.business.config.boundary.ConfigurationBuilder;
+import de.muehlencord.osmproxy.business.config.entity.Cache;
 import de.muehlencord.osmproxy.business.config.entity.Configuration;
+import de.muehlencord.osmproxy.business.config.entity.ConfigurationException;
 import de.muehlencord.osmproxy.business.config.entity.Layer;
 import de.muehlencord.osmproxy.business.config.entity.Server;
 import java.net.URL;
@@ -47,12 +47,10 @@ public class ConfigurationBean {
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigurationBean.class);
 
     /**
-     * return the configuration object. If not yet loaded, it is loaded from
-     * disk.
+     * return the configuration object. If not yet loaded, it is loaded from disk.
      *
      * @return the configuration object.
-     * @throws ConfigurationException if the configuration cannot be loaded from
-     * disk.
+     * @throws ConfigurationException if the configuration cannot be loaded from disk.
      */
     protected Configuration getConfiguration() throws ConfigurationException {
         if (configuration == null) {
@@ -89,11 +87,9 @@ public class ConfigurationBean {
     /**
      * returns the cache directory for the given layer
      *
-     * @param layerName the name of the layer to return the cache for - e.g.
-     * tiles.
+     * @param layerName the name of the layer to return the cache for - e.g. tiles.
      * @return the directory where to store the tiles to.
-     * @throws ConfigurationException if the configuration is not loaded or the
-     * cache directory is not defined.
+     * @throws ConfigurationException if the configuration is not loaded or the cache directory is not defined.
      */
     public Path getCacheDirectory(String layerName) throws ConfigurationException {
         Cache cache = getConfiguration().getCache();
@@ -116,11 +112,9 @@ public class ConfigurationBean {
     /**
      * returns a list of servers to use as upstream servers.
      *
-     * @param layerName the name of the layer to get the upstream server for -
-     * e.g. tiles.
+     * @param layerName the name of the layer to get the upstream server for - e.g. tiles.
      * @return a list of servers to use as upstream servers.
-     * @throws ConfigurationException if the configuration is not loaded or does
-     * not contain any upstream server definition.
+     * @throws ConfigurationException if the configuration is not loaded or does not contain any upstream server definition.
      */
     public List<Server> getUpstreamServer(String layerName) throws ConfigurationException {
         Layer layer = getConfiguration().getLayer(layerName);
@@ -141,6 +135,10 @@ public class ConfigurationBean {
         } else {
             return retentionTime;
         }
+    }
+
+    public List<String> getAllLayers() throws ConfigurationException {
+        return getConfiguration().getAllLayers();
     }
 
 }

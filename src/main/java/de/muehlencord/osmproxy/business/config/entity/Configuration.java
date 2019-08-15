@@ -16,6 +16,8 @@
 package de.muehlencord.osmproxy.business.config.entity;
 
 import com.google.gson.annotations.Expose;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -48,6 +50,12 @@ public class Configuration {
         } else {
             return null;
         }
+    }
+    
+    public List<String> getAllLayers() {
+        List<String> resultList = new ArrayList<>();
+        resultList.addAll (layerMap.keySet());        
+        return resultList;        
     }
 
     public Cache getCache() {
