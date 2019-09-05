@@ -35,6 +35,7 @@ import javax.ejb.Lock;
 import javax.ejb.LockType;
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
+import javax.validation.constraints.NotNull;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
@@ -179,7 +180,7 @@ public class ConnectionManager implements Serializable {
     }
 
     @Lock(LockType.READ)
-    public void executeDownload(Server currentServer, String userAgent, String urlString, Path tilePath) throws MalformedURLException, URISyntaxException, IOException {
+    public void executeDownload(Server currentServer, @NotNull String userAgent, String urlString, Path tilePath) throws MalformedURLException, URISyntaxException, IOException {
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Trying to download tile from upstream server {}", urlString);
         }
@@ -188,13 +189,13 @@ public class ConnectionManager implements Serializable {
         HttpGet httpget = new HttpGet(url.toURI());
         httpget.setConfig(config);
 
-        // check if userAgent is set for server, if yes, use this one
-        // if not, use userAgent from client (default)
-        if (currentServer.getUserAgent() == null) {
-            httpget.setHeader("User-Agent", userAgent);
-        } else {
+        // check if userAgent is set for server (in config file)
+        // if not, use the given userAgent. this is either the original user request (e.g. from the browser) or the default application one                
+        if (currentServer.getUserAgent() != null) {
             httpget.setHeader("User-Agent", currentServer.getUserAgent());
-        }
+        } else {
+            httpget.setHeader("User-Agent", userAgent);
+        } 
         httpget.setHeader("Accept-Encoding", "gzip,deflate");
         httpget.setHeader("Accept-Language", "en-US");
 

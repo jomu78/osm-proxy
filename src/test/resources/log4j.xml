@@ -9,7 +9,7 @@
         </layout>
     </appender>
     
-    <category name="com.wincornixdorf">
+    <category name="de.muehlencord">
         <priority value="DEBUG"/>
     </category>    
         

@@ -51,7 +51,7 @@ import org.slf4j.LoggerFactory;
  * @author joern.muehlencord
  */
 @Stateless
-@javax.ws.rs.Path("rest")
+@javax.ws.rs.Path("")
 public class ProxyResource implements Serializable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ProxyResource.class);
@@ -66,12 +66,12 @@ public class ProxyResource implements Serializable {
     @Produces({"image/png", "text/plain"})
     @javax.ws.rs.Path("/{layer}/{z}/{x}/{y}.{ending}")
     public Response getTile(
-            @HeaderParam("user-agent") String userAgent,
-            @PathParam("layer") String layer,
-            @PathParam("z") Long z,
-            @PathParam("x") Long x,
-            @PathParam("y") Long y,
-            @PathParam("ending") String ending) {
+            final @HeaderParam("user-agent") String userAgent,
+            final @PathParam("layer") String layer,
+            final @PathParam("z") Long z,
+            final @PathParam("x") Long x,
+            final @PathParam("y") Long y,
+            final @PathParam("ending") String ending) {
 
         if ((layer == null) || (x == null) || (y == null) || (z == null) || (ending == null)) {
             return createErrorResponse("<layer>/<z>/<x>/<y>.<filetype> parameter is mandatory", HttpURLConnection.HTTP_BAD_REQUEST);
@@ -104,6 +104,15 @@ public class ProxyResource implements Serializable {
                 .resolve(z.toString())
                 .resolve(x.toString())
                 .resolve(y.toString() + "." + ending);
+        
+        // make sure a valid user header is set - this is a requirement of the OpenStreeMap fair use policy
+        // see https://operations.osmfoundation.org/policies/tiles/
+        String finalUserAgent;
+        if ((userAgent == null) || ("".equals (userAgent.trim()))) {
+            finalUserAgent = "OSMProxy "+configurationBean.getVersion();
+        } else {
+            finalUserAgent = userAgent;
+        }
 
         Response response;
         // check if the tile exist
@@ -115,10 +124,10 @@ public class ProxyResource implements Serializable {
                 response = respondTileFromDiskCache(tile, layer, z, x, y, ending);
             } else {
                 deleteTile(tile, "delete outdated file {}");
-                response = respondTileFromUpstreamServer(userAgent, tile, layer, z, x, y, ending);
+                response = respondTileFromUpstreamServer(finalUserAgent, tile, layer, z, x, y, ending);
             }
         } else {
-            response = respondTileFromUpstreamServer(userAgent, tile, layer, z, x, y, ending);
+            response = respondTileFromUpstreamServer(finalUserAgent, tile, layer, z, x, y, ending);
         }
         response.getHeaders().add("Access-Control-Allow-Origin", "*");
         return response;

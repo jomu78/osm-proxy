@@ -23,7 +23,7 @@ import javax.ws.rs.core.Application;
  *
  * @author Joern Muehlencord (joern (at) muehlencord.de)
  */
-@ApplicationPath("web")
+@ApplicationPath("rest")
 public class ApplicationConfig extends Application {
 
     @Override

@@ -34,8 +34,8 @@
         <!-- Testing -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-api</artifactId>
-            <version>5.4.2</version>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <version>5.5.1</version>
             <scope>test</scope>
         </dependency>           
         <!-- Provided libraries -->
@@ -51,6 +51,7 @@
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
             <version>1.7.26</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -62,6 +63,31 @@
 
     <build>
         <finalName>osmproxy</finalName>        
+        
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+                <includes>
+                    <include>**/*.properties</include>
+                </includes>                            
+            </resource>
+        </resources>  
+        
+        
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-war-plugin</artifactId>
+                <version>3.2.3</version>
+                <configuration>
+                    <failOnMissingWebXml>false</failOnMissingWebXml>
+                    <webResources>
+                    </webResources>
+                </configuration>                    
+            </plugin>  
+        </plugins>
+        
     </build>
 
 </project>
