@@ -4,6 +4,13 @@ OSMProxy is a simple caching [OpenStreetMap](https://www.openstreetmap.org) prox
 to connect to OpenStreetMap servers to this application.
 When a tile is requsted, the application checks whether the tile is available in the local cache. If the tile is not available, it is requested from OpenStreetMap server first.
 
+[![][Build Status img]][Build Status]
+[![][Dependency Status img]][Dependency Status]
+[![][license img]][license]
+[![][Maven Central img]][Maven Central]
+[![][Javadocs img]][Javadocs]
+
+
 ## Prerequisites
 The application requires a Java-Web-Application service running on Java 11 at minimum. It has been tested with the following servers
 
@@ -85,4 +92,21 @@ OSMProxy helps to fullfill the requirements where possible:
 * it forwards the original user agent if available. If no header is set, OSMProxy will use its own User-Agent header. 
 * does not send no-cache-headers
 * caches tiles as per configuration
-* only uses 2 download threads 
+* only uses 2 download threads
+
+
+
+[Build Status]:https://travis-ci.org/jomu78/osm-proxy
+[Build Status img]:https://travis-ci.org/jomu78/osm-proxy.svg?branch=master
+
+[Dependency Status]:https://snyk.io/test/github/jomu78/osm-proxy
+[Dependency Status img]:https://snyk.io/test/github/jomu78/osm-proxy/badge.svg?style=flat
+
+[license]:LICENSE
+[license img]:https://img.shields.io/badge/license-Apache%202-blue.svg
+
+[Maven Central]:https://maven-badges.herokuapp.com/maven-central/de.muehlencord/osm-proxy
+[Maven Central img]:https://maven-badges.herokuapp.com/maven-central/de/muehlencord/osm-proxy/badge.svg
+
+[Javadocs]:http://www.javadoc.io/doc/de.muehlencord/osm-proxy
+[Javadocs img]:http://javadoc.io/badge/de.muehlencord/osm-proxy.svg 
