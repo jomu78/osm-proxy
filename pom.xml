@@ -12,14 +12,38 @@
     <scm>
         <developerConnection>scm:git:https://github.com/jomu78/osm-proxy</developerConnection>
         <tag>HEAD</tag>
-    </scm>      
+    </scm>     
+    <ciManagement>
+        <system>Travis</system>
+        <url>https://travis-ci.org/jomu78/osm-proxy</url>
+    </ciManagement>     
+    <issueManagement>
+        <system>GitHub</system>
+        <url>https://github.com/jomu78/osm-proxy/issues/</url>
+    </issueManagement>
     
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+    
+    <developers>
+        <developer>
+            <name>Joern Muehlencord</name>
+            <email>joern@muehlencord.de</email>
+        </developer>
+           
+    </developers>    
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <timestamp>${maven.build.timestamp}</timestamp>
         <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>   
+        <maven.compiler.target>11</maven.compiler.target>  
+        <licenses.dir>${project.build.directory}/third-party-licenses</licenses.dir> 
     </properties>
         
     
@@ -81,17 +105,17 @@
         
         
         <plugins>
+            <!-- create war archive -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-war-plugin</artifactId>
                 <version>3.2.3</version>
                 <configuration>
                     <failOnMissingWebXml>false</failOnMissingWebXml>
-                    <webResources>
-                    </webResources>
                 </configuration>                    
             </plugin>  
             
+            <!-- automatically create new versions -->
             <plugin>
                 <artifactId>maven-release-plugin</artifactId>
                 <version>2.5.3</version>
@@ -99,6 +123,61 @@
                     <tagNameFormat>v@{project.version}</tagNameFormat>
                 </configuration>
             </plugin>  
+            
+            <!-- automatically create javadoc archive -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>3.1.1</version>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            
+            <!-- automatically create source archive -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>3.1.0</version>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <goals>
+                            <goal>jar-no-fork</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            
+            <!-- automatically create file with all licenses used -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>license-maven-plugin</artifactId>
+                <version>2.0.0</version>
+                <executions>
+                    <execution>
+                        <id>download-licenses</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>download-licenses</goal>
+                            <goal>add-third-party</goal>
+                        </goals>
+                        <configuration>
+                            <licensesOutputDirectory>${licenses.dir}</licensesOutputDirectory>
+                            <outputDirectory>${licenses.dir}</outputDirectory>
+                            <licenseMerges>
+                                <licenseMerge>The Apache Software License, Version 2.0|Apache 2|Apache License, Version 2.0|Apache Public License 2.0</licenseMerge>
+                            </licenseMerges>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            
         </plugins>
         
     </build>
