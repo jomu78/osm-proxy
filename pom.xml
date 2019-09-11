@@ -34,9 +34,19 @@
         <developer>
             <name>Joern Muehlencord</name>
             <email>joern@muehlencord.de</email>
-        </developer>
-           
-    </developers>    
+        </developer>           
+    </developers>   
+    
+    <distributionManagement>
+        <snapshotRepository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        </snapshotRepository>
+        <repository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </repository>
+    </distributionManagement>     
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -89,7 +99,100 @@
             <scope>test</scope>
         </dependency>        
     </dependencies>
-
+    
+    <profiles>
+        <profile>
+            <id>release</id>
+            
+            <build>
+                <plugins>
+                    <!-- automatically create javadoc archive -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                        <version>3.1.1</version>
+                        <executions>
+                            <execution>
+                                <id>attach-javadocs</id>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+            
+                    <!-- automatically create source archive -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-source-plugin</artifactId>
+                        <version>3.1.0</version>
+                        <executions>
+                            <execution>
+                                <id>attach-sources</id>
+                                <goals>
+                                    <goal>jar-no-fork</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+            
+                    <!-- automatically create file with all licenses used -->
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>license-maven-plugin</artifactId>
+                        <version>2.0.0</version>
+                        <executions>
+                            <execution>
+                                <id>download-licenses</id>
+                                <phase>generate-resources</phase>
+                                <goals>
+                                    <goal>download-licenses</goal>
+                                    <goal>add-third-party</goal>
+                                </goals>
+                                <configuration>
+                                    <licensesOutputDirectory>${licenses.dir}</licensesOutputDirectory>
+                                    <outputDirectory>${licenses.dir}</outputDirectory>
+                                    <licenseMerges>
+                                        <licenseMerge>The Apache Software License, Version 2.0|Apache 2|Apache License, Version 2.0|Apache Public License 2.0</licenseMerge>
+                                    </licenseMerges>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+            
+                    <!-- sign components -->
+<!--                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>1.6</version>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>            -->
+            
+                    <!-- deploy to OSSRH Sonatype -->
+                    <plugin>
+                        <groupId>org.sonatype.plugins</groupId>
+                        <artifactId>nexus-staging-maven-plugin</artifactId>
+                        <version>1.6.8</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <serverId>ossrh</serverId>
+                            <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+                            <autoReleaseAfterClose>true</autoReleaseAfterClose>
+                        </configuration>
+                    </plugin>                        
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+        
     <build>
         <finalName>osmproxy</finalName>        
         
@@ -123,63 +226,7 @@
                     <tagNameFormat>v@{project.version}</tagNameFormat>
                 </configuration>
             </plugin>  
-            
-            <!-- automatically create javadoc archive -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-javadoc-plugin</artifactId>
-                <version>3.1.1</version>
-                <executions>
-                    <execution>
-                        <id>attach-javadocs</id>
-                        <goals>
-                            <goal>jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            
-            <!-- automatically create source archive -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-source-plugin</artifactId>
-                <version>3.1.0</version>
-                <executions>
-                    <execution>
-                        <id>attach-sources</id>
-                        <goals>
-                            <goal>jar-no-fork</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            
-            <!-- automatically create file with all licenses used -->
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>license-maven-plugin</artifactId>
-                <version>2.0.0</version>
-                <executions>
-                    <execution>
-                        <id>download-licenses</id>
-                        <phase>generate-resources</phase>
-                        <goals>
-                            <goal>download-licenses</goal>
-                            <goal>add-third-party</goal>
-                        </goals>
-                        <configuration>
-                            <licensesOutputDirectory>${licenses.dir}</licensesOutputDirectory>
-                            <outputDirectory>${licenses.dir}</outputDirectory>
-                            <licenseMerges>
-                                <licenseMerge>The Apache Software License, Version 2.0|Apache 2|Apache License, Version 2.0|Apache Public License 2.0</licenseMerge>
-                            </licenseMerges>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            
-        </plugins>
-        
+        </plugins>        
     </build>
 
 </project>
