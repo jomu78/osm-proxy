@@ -169,7 +169,7 @@
                     </plugin>
             
                     <!-- sign components -->
-                    <!--                    <plugin>
+                    <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-gpg-plugin</artifactId>
                         <version>1.6</version>
@@ -180,9 +180,12 @@
                                 <goals>
                                     <goal>sign</goal>
                                 </goals>
-                            </execution>
+                            </execution>                           
                         </executions>
-                    </plugin>            -->
+                        <configuration>
+                            <keyname>993245E2EC7608BB</keyname>
+                        </configuration>                            
+                    </plugin>            
             
                     <!-- deploy to OSSRH Sonatype -->
                     <plugin>
