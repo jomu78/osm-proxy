@@ -8,11 +8,19 @@
     <packaging>war</packaging>
 
     <name>osm-proxy</name>
+    <description>
+        OSMProxy is a simple caching OpenStreetMap proxy. Instead of directly requesting tiles from the OpenStreetMap servers you can configure this application
+        to serve as proxy instead. If a tile is not cached, it will be downloaded from OpenStreetMap instead, cached and served to your application.
+    </description>
+    <url>https://github.com/jomu78/osm-proxy</url>
     
     <scm>
+        <connection>scm:git:https://github.com/jomu78/osm-proxy</connection>
         <developerConnection>scm:git:https://github.com/jomu78/osm-proxy</developerConnection>
+        <url>http://github.com/simpligility/ossrh-demo/tree/master</url>
         <tag>HEAD</tag>
-    </scm>     
+    </scm>    
+    
     <ciManagement>
         <system>Travis</system>
         <url>https://travis-ci.org/jomu78/osm-proxy</url>
@@ -161,7 +169,7 @@
                     </plugin>
             
                     <!-- sign components -->
-<!--                    <plugin>
+                    <!--                    <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-gpg-plugin</artifactId>
                         <version>1.6</version>
