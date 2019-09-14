@@ -106,7 +106,7 @@ OSMProxy helps to fullfill the requirements where possible:
 [license img]:https://img.shields.io/badge/license-Apache%202-blue.svg
 
 [Maven Central]:https://maven-badges.herokuapp.com/maven-central/de.muehlencord/osm-proxy
-[Maven Central img]:https://maven-badges.herokuapp.com/maven-central/de/muehlencord/osm-proxy/badge.svg
+[Maven Central img]:https://maven-badges.herokuapp.com/maven-central/de.muehlencord/osm-proxy/badge.svg
 
 [Javadocs]:http://www.javadoc.io/doc/de.muehlencord/osm-proxy
 [Javadocs img]:http://javadoc.io/badge/de.muehlencord/osm-proxy.svg 
