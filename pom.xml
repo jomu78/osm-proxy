@@ -1,254 +1,290 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
 
-    <groupId>de.muehlencord</groupId>
-    <artifactId>osm-proxy</artifactId>
-    <version>1.0.6-SNAPSHOT</version>
-    <packaging>war</packaging>
+  <groupId>de.muehlencord</groupId>
+  <artifactId>osm-proxy</artifactId>
+  <version>1.0.6-SNAPSHOT</version>
 
-    <name>osm-proxy</name>
-    <description>
-        OSMProxy is a simple caching OpenStreetMap proxy. Instead of directly requesting tiles from the OpenStreetMap servers you can configure this application
-        to serve as proxy instead. If a tile is not cached, it will be downloaded from OpenStreetMap instead, cached and served to your application.
-    </description>
-    <url>https://github.com/jomu78/osm-proxy</url>
-    
-    <scm>
-        <connection>scm:git:https://github.com/jomu78/osm-proxy</connection>
-        <developerConnection>scm:git:https://github.com/jomu78/osm-proxy</developerConnection>
-        <url>http://github.com/simpligility/ossrh-demo/tree/master</url>
-        <tag>HEAD</tag>
-    </scm>    
-    
-    <ciManagement>
-        <system>Travis</system>
-        <url>https://travis-ci.org/jomu78/osm-proxy</url>
-    </ciManagement>     
-    <issueManagement>
-        <system>GitHub</system>
-        <url>https://github.com/jomu78/osm-proxy/issues/</url>
-    </issueManagement>
-    
-    <licenses>
-        <license>
-            <name>Apache License, Version 2.0</name>
-            <url>http://www.apache.org/licenses/LICENSE-2.0</url>
-            <distribution>repo</distribution>
-        </license>
-    </licenses>
-    
-    <developers>
-        <developer>
-            <name>Joern Muehlencord</name>
-            <email>joern@muehlencord.de</email>
-        </developer>           
-    </developers>   
-    
-    <distributionManagement>
-        <snapshotRepository>
-            <id>ossrh</id>
-            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-        </snapshotRepository>
-        <repository>
-            <id>ossrh</id>
-            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-        </repository>
-    </distributionManagement>     
+  <parent>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId>
+    <version>2.3.3.RELEASE</version>
+    <relativePath/> <!-- lookup parent from repository -->
+  </parent>
 
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <timestamp>${maven.build.timestamp}</timestamp>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>  
-        <licenses.dir>${project.build.directory}/third-party-licenses</licenses.dir> 
-    </properties>
-        
-    
+
+  <modules>
+    <module>osm-proxy-wildfly</module>
+    <module>osm-proxy-spring</module>
+    <module>osm-proxy-common</module>
+  </modules>
+  <packaging>pom</packaging>
+
+  <name>osm-proxy</name>
+  <description>
+    OSMProxy is a simple caching OpenStreetMap proxy. Instead of directly requesting tiles from the OpenStreetMap
+    servers you can configure this application
+    to serve as proxy instead. If a tile is not cached, it will be downloaded from OpenStreetMap instead, cached and
+    served to your application.
+  </description>
+  <url>https://github.com/jomu78/osm-proxy</url>
+
+  <scm>
+    <connection>scm:git:https://github.com/jomu78/osm-proxy</connection>
+    <developerConnection>scm:git:https://github.com/jomu78/osm-proxy</developerConnection>
+    <url>http://github.com/simpligility/ossrh-demo/tree/master</url>
+    <tag>HEAD</tag>
+  </scm>
+
+  <ciManagement>
+    <system>Travis</system>
+    <url>https://travis-ci.org/jomu78/osm-proxy</url>
+  </ciManagement>
+  <issueManagement>
+    <system>GitHub</system>
+    <url>https://github.com/jomu78/osm-proxy/issues/</url>
+  </issueManagement>
+
+  <licenses>
+    <license>
+      <name>Apache License, Version 2.0</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
+  <developers>
+    <developer>
+      <name>Joern Muehlencord</name>
+      <email>joern@muehlencord.de</email>
+    </developer>
+  </developers>
+
+  <distributionManagement>
+    <snapshotRepository>
+      <id>ossrh</id>
+      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+    </snapshotRepository>
+    <repository>
+      <id>ossrh</id>
+      <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+    </repository>
+  </distributionManagement>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <timestamp>${maven.build.timestamp}</timestamp>
+    <maven.compiler.source>11</maven.compiler.source>
+    <maven.compiler.target>11</maven.compiler.target>
+    <licenses.dir>${project.build.directory}/third-party-licenses</licenses.dir>
+  </properties>
+
+
+  <dependencyManagement>
     <dependencies>
-        <dependency>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpclient</artifactId>
-            <version>4.5.12</version>
-            <type>jar</type>
-            <exclusions>
-                <exclusion>
-                    <groupId>commons-codec</groupId>
-                    <artifactId>commons-codec</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
+      <!-- project dependencies -->
+      <dependency>
+        <groupId>de.muehlencord</groupId>
+        <artifactId>osm-proxy-common</artifactId>
+        <version>1.0.6-SNAPSHOT</version>
+      </dependency>
+      <!-- HTTP client -->
+      <dependency>
+        <groupId>org.apache.httpcomponents</groupId>
+        <artifactId>httpclient</artifactId>
+        <version>4.5.12</version>
+        <type>jar</type>
+        <exclusions>
+          <exclusion>
             <groupId>commons-codec</groupId>
             <artifactId>commons-codec</artifactId>
-            <version>1.14</version>
-        </dependency>
-        <dependency>
-            <groupId>com.google.code.gson</groupId>
-            <artifactId>gson</artifactId>
-            <version>2.8.5</version>
-            <type>jar</type>
-        </dependency>
-        <!-- Testing -->
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-engine</artifactId>
-            <version>5.5.1</version>
-            <scope>test</scope>
-        </dependency>           
-        <!-- Provided libraries -->
-        <dependency>
-            <groupId>javax</groupId>
-            <artifactId>javaee-web-api</artifactId>
-            <version>7.0</version>
-            <scope>provided</scope>
-        </dependency>
-        
-        <!-- Logging, API build in, log4j as test because wildfly provides own one (provided) but needed for logging of test cases -->
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-            <version>1.7.26</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-log4j12</artifactId>
-            <version>1.7.26</version>
-            <scope>test</scope>
-        </dependency>        
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>commons-codec</groupId>
+        <artifactId>commons-codec</artifactId>
+        <version>1.14</version>
+      </dependency>
+
+      <!-- Logging -->
+      <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-api</artifactId>
+        <version>1.7.26</version>
+        <scope>provided</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-log4j12</artifactId>
+        <version>1.7.26</version>
+        <scope>test</scope>
+      </dependency>
+
+      <!-- JEE for Wildfly -->
+      <dependency>
+        <groupId>javax</groupId>
+        <artifactId>javaee-web-api</artifactId>
+        <version>8.0</version>
+        <scope>provided</scope>
+      </dependency>
+      <!-- GSON for Wildfly -->
+      <dependency>
+        <groupId>com.google.code.gson</groupId>
+        <artifactId>gson</artifactId>
+        <version>2.8.6</version>
+      </dependency>
+
+      <!-- Testing -->
+      <dependency>
+        <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter-engine</artifactId>
+        <version>5.5.1</version>
+        <scope>test</scope>
+      </dependency>
     </dependencies>
-    
-    <profiles>
-        <profile>
-            <id>release</id>
-            
-            <build>
-                <plugins>
-                    <!-- automatically create javadoc archive -->
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-javadoc-plugin</artifactId>
-                        <version>3.1.1</version>
-                        <executions>
-                            <execution>
-                                <id>attach-javadocs</id>
-                                <goals>
-                                    <goal>jar</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-            
-                    <!-- automatically create source archive -->
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-source-plugin</artifactId>
-                        <version>3.1.0</version>
-                        <executions>
-                            <execution>
-                                <id>attach-sources</id>
-                                <goals>
-                                    <goal>jar-no-fork</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-            
-                    <!-- automatically create file with all licenses used -->
-                    <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>license-maven-plugin</artifactId>
-                        <version>2.0.0</version>
-                        <executions>
-                            <execution>
-                                <id>download-licenses</id>
-                                <phase>generate-resources</phase>
-                                <goals>
-                                    <goal>download-licenses</goal>
-                                    <goal>add-third-party</goal>
-                                </goals>
-                                <configuration>
-                                    <licensesOutputDirectory>${licenses.dir}</licensesOutputDirectory>
-                                    <outputDirectory>${licenses.dir}</outputDirectory>
-                                    <licenseMerges>
-                                        <licenseMerge>The Apache Software License, Version 2.0|Apache 2|Apache License, Version 2.0|Apache Public License 2.0</licenseMerge>
-                                    </licenseMerges>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-            
-                    <!-- sign components -->
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-gpg-plugin</artifactId>
-                        <version>1.6</version>
-                        <executions>
-                            <execution>
-                                <id>sign-artifacts</id>
-                                <phase>verify</phase>
-                                <goals>
-                                    <goal>sign</goal>
-                                </goals>
-                            </execution>                           
-                        </executions>
-                        <configuration>
-                            <keyname>993245E2EC7608BB</keyname>
-                        </configuration>                            
-                    </plugin>            
-            
-                    <!-- deploy to OSSRH Sonatype -->
-                    <plugin>
-                        <groupId>org.sonatype.plugins</groupId>
-                        <artifactId>nexus-staging-maven-plugin</artifactId>
-                        <version>1.6.8</version>
-                        <extensions>true</extensions>
-                        <configuration>
-                            <serverId>ossrh</serverId>
-                            <nexusUrl>https://oss.sonatype.org/</nexusUrl>
-                            <autoReleaseAfterClose>true</autoReleaseAfterClose>
-                        </configuration>
-                    </plugin>                        
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
-        
-    <build>
-        <finalName>osmproxy</finalName>        
-        
-        <resources>
-            <resource>
-                <directory>src/main/resources</directory>
-                <filtering>true</filtering>
-                <includes>
-                    <include>**/*.properties</include>
-                </includes>                            
-            </resource>
-        </resources>  
-        
-        
+
+
+  </dependencyManagement>
+
+
+  <profiles>
+    <profile>
+      <id>release</id>
+
+      <build>
         <plugins>
-            <!-- create war archive -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-war-plugin</artifactId>
-                <version>3.2.3</version>
+          <!-- automatically create javadoc archive -->
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <version>3.1.1</version>
+            <executions>
+              <execution>
+                <id>attach-javadocs</id>
+                <goals>
+                  <goal>jar</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+
+          <!-- automatically create source archive -->
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-source-plugin</artifactId>
+            <version>3.1.0</version>
+            <executions>
+              <execution>
+                <id>attach-sources</id>
+                <goals>
+                  <goal>jar-no-fork</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+
+          <!-- automatically create file with all licenses used -->
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>license-maven-plugin</artifactId>
+            <version>2.0.0</version>
+            <executions>
+              <execution>
+                <id>download-licenses</id>
+                <phase>generate-resources</phase>
+                <goals>
+                  <goal>download-licenses</goal>
+                  <goal>add-third-party</goal>
+                </goals>
                 <configuration>
-                    <failOnMissingWebXml>false</failOnMissingWebXml>
-                </configuration>                    
-            </plugin>  
-            
-            <!-- automatically create new versions -->
-            <plugin>
-                <artifactId>maven-release-plugin</artifactId>
-                <version>2.5.3</version>
-                <configuration>
-                    <tagNameFormat>v@{project.version}</tagNameFormat>
+                  <licensesOutputDirectory>${licenses.dir}</licensesOutputDirectory>
+                  <outputDirectory>${licenses.dir}</outputDirectory>
+                  <licenseMerges>
+                    <licenseMerge>The Apache Software License, Version 2.0|Apache 2|Apache License, Version 2.0|Apache
+                      Public License 2.0
+                    </licenseMerge>
+                  </licenseMerges>
                 </configuration>
-            </plugin>  
-        </plugins>        
-    </build>
+              </execution>
+            </executions>
+          </plugin>
+
+          <!-- sign components -->
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <version>1.6</version>
+            <executions>
+              <execution>
+                <id>sign-artifacts</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+              </execution>
+            </executions>
+            <configuration>
+              <keyname>993245E2EC7608BB</keyname>
+            </configuration>
+          </plugin>
+
+          <!-- deploy to OSSRH Sonatype -->
+          <plugin>
+            <groupId>org.sonatype.plugins</groupId>
+            <artifactId>nexus-staging-maven-plugin</artifactId>
+            <version>1.6.8</version>
+            <extensions>true</extensions>
+            <configuration>
+              <serverId>ossrh</serverId>
+              <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+              <autoReleaseAfterClose>true</autoReleaseAfterClose>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+
+  <build>
+    <resources>
+      <resource>
+        <directory>src/main/resources</directory>
+        <filtering>true</filtering>
+        <includes>
+          <include>**/*.properties</include>
+          <include>**/*.html</include>
+          <include>**/*.css</include>
+          <include>**/*.js</include>
+          <include>**/*.map</include>
+          <include>WEB-INF/*.xml</include>
+        </includes>
+      </resource>
+    </resources>
+
+
+    <plugins>
+      <!-- create war archive -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-war-plugin</artifactId>
+        <version>3.3.1</version>
+        <configuration>
+          <failOnMissingWebXml>false</failOnMissingWebXml>
+        </configuration>
+      </plugin>
+
+      <!-- automatically create new versions -->
+      <plugin>
+        <artifactId>maven-release-plugin</artifactId>
+        <version>2.5.3</version>
+        <configuration>
+          <tagNameFormat>v@{project.version}</tagNameFormat>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
 
 </project>

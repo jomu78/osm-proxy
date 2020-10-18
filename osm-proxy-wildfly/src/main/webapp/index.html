@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="./webjars/openlayers/6.4.2/ol.css" type="text/css">
+  <style>
+    .map {
+      height: 800px;
+      width: 100%;
+    }
+  </style>
+  <script src="./webjars/openlayers/6.4.2/ol.js"></script>
+  <title>Simple Map</title>
+</head>
+<body>
+<div id="map" class="map" />
+<script type="text/javascript">
+  var map = new ol.Map({
+    target: 'map',
+    layers: [
+      new ol.layer.Tile({
+        source: new ol.source.OSM({
+          attributions: [
+            ol.source.OSM.ATTRIBUTION
+          ],
+          opaque: false,
+          url: 'rest/tiles/{z}/{x}/{y}.png'
+
+        })
+      })
+    ],
+    view: new ol.View({
+      center: ol.proj.fromLonLat([8.7684, 51.7276]),
+      zoom: 6
+    })
+  });
+</script>
+</body>
+</html>
