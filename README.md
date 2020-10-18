@@ -16,6 +16,8 @@ The application requires a Java-Web-Application service running on Java 11 at mi
 
 * WildFly 16
 * WildFly 17
+* WildFly 18
+* WildFly 19
 
 ## Installation
 There is no configuration on the Application Server required. The configuration is done in a simple JSON-based configuration file which is located in the home directory of the user
