@@ -1,0 +1,29 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /
+
+
+logging:
+  level:
+    de:
+      muehlencord: DEBUG
+
+osmproxy:
+  cache:
+    name: disk
+    retention-time: 180
+    path: /home/jmueh/.osmproxy/cache
+  layer-map:
+    tiles:
+      name: tiles
+      cache-folder: tiles
+      upstream:
+        - name: openstreetmap
+          url: http://tile.openstreetmap.org/{z}/{x}/{y}.png
+
+
+
+
+
+

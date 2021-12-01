@@ -50,13 +50,15 @@ public class ProxyResource {
 
   @Inject
   ConfigurationBean configurationService;
+  @Inject
+  VersionBean versionService;
 
   @Inject
   WildflyConnectionManager connectionManager;
 
 
   @GET
-  @Produces({"image/png", "text/plain"})
+  @Produces({ "image/png", "text/plain" })
   @javax.ws.rs.Path("/{layer}/{z}/{x}/{y}.{ending}")
   public Response getTile(
       final @HeaderParam("user-agent") String userAgent,
@@ -104,7 +106,7 @@ public class ProxyResource {
     // see https://operations.osmfoundation.org/policies/tiles/
     String finalUserAgent;
     if ((userAgent == null) || ("".equals(userAgent.trim()))) {
-      finalUserAgent = "OSMProxy " + configurationService.getVersion();
+      finalUserAgent = "OSMProxy " + versionService.getVersion();
     } else {
       finalUserAgent = userAgent;
     }

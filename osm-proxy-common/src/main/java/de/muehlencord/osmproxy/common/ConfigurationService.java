@@ -11,13 +11,6 @@ import java.util.List;
  */
 public interface ConfigurationService {
 
-  void readConfiguration();
-
-  String getVersion();
-
-  String getBuildDate();
-
-
   List<Server> getUpstreamServer(String layerName) throws ConfigurationException;
 
   Path getCacheDirectory(String layerName) throws ConfigurationException;

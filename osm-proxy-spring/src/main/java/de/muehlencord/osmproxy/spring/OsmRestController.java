@@ -1,6 +1,5 @@
 package de.muehlencord.osmproxy.spring;
 
-import de.muehlencord.osmproxy.common.ConfigurationService;
 import de.muehlencord.osmproxy.common.DownloadConfiguration;
 import de.muehlencord.osmproxy.common.entity.ConfigurationException;
 import de.muehlencord.osmproxy.common.entity.Server;
@@ -32,15 +31,17 @@ public class OsmRestController {
 
   private static final Logger logger = LoggerFactory.getLogger(OsmRestController.class);
 
+  private final VersionService versionService;
   private final ConfigurationService configurationService;
   private final ConnectionManager connectionManager;
 
-  public OsmRestController(ConfigurationService configurationService, ConnectionManager connectionManager) {
-    this.configurationService = configurationService;
+  public OsmRestController(VersionService versionService, ConnectionManager connectionManager, ConfigurationService configurationService) {
+    this.versionService = versionService;
     this.connectionManager = connectionManager;
+    this.configurationService = configurationService;
   }
 
-  @GetMapping(value = "/rest/{layer}/{z}/{x}/{y}.{ending}", produces = {"image/png", "text/plain"})
+  @GetMapping(value = "/rest/{layer}/{z}/{x}/{y}.{ending}", produces = { "image/png", "text/plain" })
   public ResponseEntity<Resource> getTile(
       final @RequestHeader("user-agent") String userAgent,
       final @PathVariable("layer") String layer,
@@ -61,9 +62,7 @@ public class OsmRestController {
     if (!ending.equals("png")) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "png is currently supported only");
     }
-    if (logger.isDebugEnabled()) {
-      logger.debug("Requesting tile {}/{}/{}/{}.{}", layer, z, x, y, ending);
-    }
+    logger.debug("Requesting tile {}/{}/{}/{}.{}", layer, z, x, y, ending);
 
     Path layerCacheFolder;
     try {
@@ -82,7 +81,7 @@ public class OsmRestController {
     // see https://operations.osmfoundation.org/policies/tiles/
     String finalUserAgent;
     if ((userAgent == null) || ("".equals(userAgent.trim()))) {
-      finalUserAgent = "OSMProxy " + configurationService.getVersion();
+      finalUserAgent = "OSMProxy " + versionService.getVersion();
     } else {
       finalUserAgent = userAgent;
     }
@@ -142,15 +141,11 @@ public class OsmRestController {
       image = ImageIO.read(tilePath.toFile());
     } catch (IOException ex) {
 
-      if (logger.isDebugEnabled()) {
-        logger.debug("Cannot read image from file {}", tilePath);
-        logger.error(ex.getMessage(), ex);
-      }
+      logger.error("Cannot read image from file {}", tilePath);
+      logger.debug(ex.getMessage(), ex);
     }
     if (image == null) {
-      if (logger.isDebugEnabled()) {
-        logger.debug("Cannot construct image from file {}, going to delete file", tilePath);
-      }
+      logger.debug("Cannot construct image from file {}, going to delete file", tilePath);
       connectionManager.deleteTile(tilePath, "Deleted broken file {}");
       throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "error while reading tile from cache");
     } else {
@@ -159,9 +154,7 @@ public class OsmRestController {
         ImageIO.write(image, "png", baos);
         imageData = baos.toByteArray();
       } catch (IOException ex) {
-        if (logger.isDebugEnabled()) {
-          logger.debug(ex.toString(), ex);
-        }
+        logger.debug(ex.toString(), ex);
         throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "error while reading tile from cache", ex);
       }
       logger.debug("served tile {}/{}/{}/{}.{} from cache", downloadConfiguration.getLayer(),
@@ -174,7 +167,7 @@ public class OsmRestController {
 
   private ResponseEntity<Resource> respondTileFromUpstreamServer(List<Server> upstreamServers,
       DownloadConfiguration downloadConfiguration) {
-    // file does not exists, try to get it from upstream server
+    // file does not exist, try to get it from upstream server
     if (!downloadConfiguration.getTilePath().toFile().getParentFile().exists()) {
       downloadConfiguration.getTilePath().toFile().getParentFile().mkdirs();
     }
@@ -183,9 +176,7 @@ public class OsmRestController {
     try {
       fileDownloaded = connectionManager.downloadFromUpStreamServer(upstreamServers, downloadConfiguration);
     } catch (ConfigurationException ex) {
-      if (logger.isDebugEnabled()) {
-        logger.error(ex.getMessage(), ex);
-      }
+      logger.error(ex.getMessage(), ex);
       throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "error loading tile from upstream server",
           ex);
     }

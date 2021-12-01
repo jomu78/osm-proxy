@@ -15,8 +15,9 @@
  */
 package de.muehlencord.osmproxy.common;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import de.muehlencord.osmproxy.common.entity.Configuration;
 import de.muehlencord.osmproxy.common.entity.ConfigurationException;
 import java.io.IOException;
@@ -24,41 +25,47 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 /**
- *
  * @author joern.muehlencord
  */
 public class ConfigurationBuilder {
 
-    private static final Gson GSON_INSTANCE = new GsonBuilder()
-            .setPrettyPrinting()
-            .excludeFieldsWithoutExposeAnnotation()
-            .create();
+  private static final ObjectMapper objectMapper;
 
-    private ConfigurationBuilder() {
-        // hide constructor        
-    }
+  static {
+    objectMapper = new ObjectMapper();
+    objectMapper.setVisibility(objectMapper.getSerializationConfig().getDefaultVisibilityChecker()
+                                           .withFieldVisibility(JsonAutoDetect.Visibility.ANY)
+                                           .withGetterVisibility(JsonAutoDetect.Visibility.NONE)
+                                           .withSetterVisibility(JsonAutoDetect.Visibility.NONE)
+                                           .withIsGetterVisibility(JsonAutoDetect.Visibility.NONE)
+                                           .withCreatorVisibility(JsonAutoDetect.Visibility.NONE));
+  }
 
-    public static String toJson(Configuration config) {
-        return GSON_INSTANCE.toJson(config);
-    }
 
-    public static Configuration fromJson(String jsonString) {
-        return GSON_INSTANCE.fromJson(jsonString, Configuration.class);
-    }
+  private ConfigurationBuilder() {
+    // hide constructor
+  }
 
-    public static Configuration fromFile(Path configFile) throws ConfigurationException {
-        if (configFile.toFile().exists()) {            
-            String jsonString;
-            
-            try {
-                jsonString = new String(Files.readAllBytes(configFile));
-            } catch (IOException ex) {
-                throw new ConfigurationException ("Cannot read configfile from "+configFile.toString(), ex);  
-            }
-            
-            return fromJson (jsonString); 
-        } else {
-            throw new ConfigurationException("Cannot find file " + configFile.toString());
-        }
+  public static String toJson(Configuration config) throws JsonProcessingException {
+    return objectMapper.writeValueAsString(config);
+  }
+
+  public static Configuration fromJson(String jsonString) throws JsonProcessingException {
+    return objectMapper.readValue(jsonString, Configuration.class);
+  }
+
+  public static Configuration fromFile(Path configFile) throws ConfigurationException {
+    if (configFile.toFile().exists()) {
+      String jsonString;
+
+      try {
+        jsonString = new String(Files.readAllBytes(configFile));
+        return fromJson(jsonString);
+      } catch (IOException ex) {
+        throw new ConfigurationException("Cannot read configfile from " + configFile.toString(), ex);
+      }
+    } else {
+      throw new ConfigurationException("Cannot find file " + configFile.toString());
     }
+  }
 }

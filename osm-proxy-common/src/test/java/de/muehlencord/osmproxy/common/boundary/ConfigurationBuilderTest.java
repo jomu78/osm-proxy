@@ -18,6 +18,7 @@ package de.muehlencord.osmproxy.common.boundary;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import de.muehlencord.osmproxy.common.ConfigurationBuilder;
 import de.muehlencord.osmproxy.common.entity.Cache;
 import de.muehlencord.osmproxy.common.entity.Configuration;
@@ -31,13 +32,13 @@ import org.junit.jupiter.api.Test;
 class ConfigurationBuilderTest {
 
   @Test
-  void testConfiguration() {
+  void testConfiguration() throws JsonProcessingException {
     Configuration config = new Configuration();
     config.setCache(new Cache("disk"));
 
     Layer layer = new Layer("tiles")
         .addUpstreamServer(new Server("openstreetmap", "http://a.tile.openstreetmap.org/{z}/{x}/{y}.png"))
-        .setCacheFolder("tiles");
+        .withCacheFolder("tiles");
 
     config.addLayer(layer);
 

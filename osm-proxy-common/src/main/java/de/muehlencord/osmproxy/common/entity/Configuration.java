@@ -15,85 +15,42 @@
  */
 package de.muehlencord.osmproxy.common.entity;
 
-import com.google.gson.annotations.Expose;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import lombok.Data;
 
 /**
- *
  * @author joern.muehlencord
  */
+@Data
 public class Configuration {
-    
-    @Expose
-    private Cache cache;
 
-    @Expose
-    private Map<String, Layer> layerMap;
+  private Cache cache;
+  private Map<String, Layer> layerMap;
 
-    /* *** getter / setter *** */
+  /* *** getter / setter *** */
 
 
-    public void addLayer(Layer layer) {
-        if (this.layerMap == null) {
-            layerMap = new ConcurrentHashMap<>();
-        }
-        layerMap.put(layer.getName(), layer);
+  public void addLayer(Layer layer) {
+    if (this.layerMap == null) {
+      layerMap = new ConcurrentHashMap<>();
     }
+    layerMap.put(layer.getName(), layer);
+  }
 
-    public Layer getLayer(String layerName) {
-        if (layerMap.containsKey(layerName)) {
-            return layerMap.get(layerName);
-        } else {
-            return null;
-        }
+  public Layer getLayer(String layerName) {
+    if (layerMap.containsKey(layerName)) {
+      return layerMap.get(layerName);
+    } else {
+      return null;
     }
-    
-    public List<String> getAllLayers() {
-        List<String> resultList = new ArrayList<>();
-        resultList.addAll (layerMap.keySet());        
-        return resultList;        
-    }
+  }
 
-    public Cache getCache() {
-        return cache;
-    }
-
-    public void setCache(Cache cache) {
-        this.cache = cache;
-    }
-    
-    
-    /* equals / hashCode */
-
-    @Override
-    public int hashCode() {
-        int hash = 5;
-        hash = 23 * hash + Objects.hashCode(this.cache);
-        hash = 23 * hash + Objects.hashCode(this.layerMap);
-        return hash;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj == null) {
-            return false;
-        }
-        if (getClass() != obj.getClass()) {
-            return false;
-        }
-        final Configuration other = (Configuration) obj;
-        if (!Objects.equals(this.cache, other.cache)) {
-            return false;
-        }
-        return Objects.equals(this.layerMap, other.layerMap);
-    }
-
-
+  public List<String> getAllLayers() {
+    List<String> resultList = new ArrayList<>();
+    resultList.addAll(layerMap.keySet());
+    return resultList;
+  }
 }
