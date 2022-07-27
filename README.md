@@ -1,8 +1,10 @@
 # OSMProxy
 
-OSMProxy is a simple caching [OpenStreetMap](https://www.openstreetmap.org) proxy. Instead of directly requesting tiles from the OpenStreetMap servers, you can configure any application which requires
+OSMProxy is a simple caching [OpenStreetMap](https://www.openstreetmap.org) proxy. Instead of directly requesting tiles from the OpenStreetMap servers, you can
+configure any application which requires
 to connect to OpenStreetMap servers to this application.
-When a tile is requsted, the application checks whether the tile is available in the local cache. If the tile is not available, it is requested from OpenStreetMap server first.
+When a tile is requested, the application checks whether the tile is available in the local cache. If the tile is not available, it is requested from
+OpenStreetMap server first.
 
 [![][Build Status img]][Build Status]
 [![][Dependency Status img]][Dependency Status]

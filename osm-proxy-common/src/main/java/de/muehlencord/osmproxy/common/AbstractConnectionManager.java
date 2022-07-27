@@ -17,15 +17,15 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpHost;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.conn.HttpClientConnectionManager;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
-import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.apache.hc.client5.http.classic.methods.HttpGet;
+import org.apache.hc.client5.http.config.RequestConfig;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
+import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
+import org.apache.hc.core5.http.HttpEntity;
+import org.apache.hc.core5.http.HttpHost;
+import org.apache.hc.core5.io.CloseMode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,10 +40,6 @@ public abstract class AbstractConnectionManager implements ConnectionManager {
   protected PoolingHttpClientConnectionManager connectionManager;
   protected final Map<String, RequestConfig> requestConfigMap = new ConcurrentHashMap<>();
 
-
-  public HttpClientConnectionManager getConnectionManager() {
-    return connectionManager;
-  }
 
   public RequestConfig getRequestConfig(URL url) {
     String urlHostString = url.getProtocol() + "://" + url.getHost();
@@ -99,7 +95,7 @@ public abstract class AbstractConnectionManager implements ConnectionManager {
       }
 
       if (httpProxyHost != null && httpProxyPort != null && !httpProxyPort.equals(0)) {
-        httpProxy = new HttpHost(httpProxyHost, httpProxyPort, "http");
+        httpProxy = new HttpHost("http", httpProxyHost, httpProxyPort);
         if (logger.isDebugEnabled()) {
           logger.debug("Using proxy {}:{} to connect to {}", httpProxyHost, httpProxyPort, url);
         }
@@ -139,7 +135,7 @@ public abstract class AbstractConnectionManager implements ConnectionManager {
   }
 
   @Override
-  public void executeDownload(Server currentServer, String userAgent, String urlString, Path tilePath)
+  public void executeDownload(Server currentServer, String userAgent, String acceptHeader, String urlString, Path tilePath)
       throws URISyntaxException, IOException {
     if (logger.isDebugEnabled()) {
       logger.debug("Trying to download tile from upstream server {}", urlString);
@@ -158,14 +154,18 @@ public abstract class AbstractConnectionManager implements ConnectionManager {
     }
     httpget.setHeader("Accept-Encoding", "gzip,deflate");
     httpget.setHeader("Accept-Language", "en-US");
+    httpget.setHeader("accept", acceptHeader);
 
     CloseableHttpClient httpClient = HttpClients.custom().setConnectionManager(connectionManager).build();
-    HttpResponse response = httpClient.execute(httpget);
-    HttpEntity entity = response.getEntity();
-    if (entity != null) {
-      saveFile(entity, tilePath);
-      if (logger.isDebugEnabled()) {
-        logger.debug("stored {} as {}", urlString, tilePath);
+    CloseableHttpResponse response = httpClient.execute(httpget);
+    int status = response.getCode();
+    if ((status >= 100) && (status <= 226)) {
+      HttpEntity entity = response.getEntity();
+      if (entity != null) {
+        saveFile(entity, tilePath);
+        if (logger.isDebugEnabled()) {
+          logger.debug("stored {} as {}", urlString, tilePath);
+        }
       }
     }
   }
@@ -185,7 +185,7 @@ public abstract class AbstractConnectionManager implements ConnectionManager {
       try {
         Files.delete(tilePath);
         if (logger.isDebugEnabled()) {
-          logger.debug(deleteReason, tilePath.toString());
+          logger.debug(deleteReason, tilePath);
         }
       } catch (IOException ex) {
         logger.error("error during deleting {} caused by {}", tilePath, deleteReason);
@@ -220,7 +220,7 @@ public abstract class AbstractConnectionManager implements ConnectionManager {
   }
 
   protected void shutdown() {
-    connectionManager.shutdown();
+    connectionManager.close(CloseMode.GRACEFUL);
     if (logger.isDebugEnabled()) {
       logger.debug("Connection manager shutdown");
     }
@@ -236,7 +236,7 @@ public abstract class AbstractConnectionManager implements ConnectionManager {
       urlString = urlString.replace("{y}", Long.toString(downloadConfig.getY()));
       urlString = urlString.replace("{ending}", downloadConfig.getEnding());
       try {
-        executeDownload(currentServer, downloadConfig.getUserAgent(), urlString, downloadConfig.getTilePath());
+        executeDownload(currentServer, downloadConfig.getUserAgent(), downloadConfig.getAcceptHeader(), urlString, downloadConfig.getTilePath());
         return true;
       } catch (URISyntaxException | IOException ex) {
         throw new ConfigurationException("cannot construct URL for upstream server.", ex);

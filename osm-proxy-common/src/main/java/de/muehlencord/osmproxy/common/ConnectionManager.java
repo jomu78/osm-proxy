@@ -13,7 +13,9 @@ import java.util.List;
  */
 public interface ConnectionManager {
 
-  void executeDownload(Server currentServer, String userAgent, String urlString, Path tilePath)
+  void executeDownload(Server currentServer,
+      String userAgent, String acceptHeader,
+      String urlString, Path tilePath)
       throws URISyntaxException, IOException;
 
   void deleteTile(Path tilePath, String deleteReason);

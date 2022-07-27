@@ -1,14 +1,19 @@
 package de.muehlencord.osmproxy.common;
 
 import java.nio.file.Path;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * @author Joern Muehlencord, 2020-10-18
  * @since 1.1.0
  */
+@Getter
+@Setter
 public class DownloadConfiguration {
 
   String userAgent;
+  String acceptHeader;
   private Path tilePath;
   private String layer;
   private long z;
@@ -20,6 +25,12 @@ public class DownloadConfiguration {
     this.userAgent = userAgent;
     return this;
   }
+
+  public DownloadConfiguration withAcceptHeader(String acceptHeader) {
+    this.acceptHeader = acceptHeader;
+    return this;
+  }
+
 
   public DownloadConfiguration withTilePath(final Path tilePath) {
     this.tilePath = tilePath;
@@ -51,64 +62,5 @@ public class DownloadConfiguration {
     return this;
   }
 
-  /* *** fluent api *** */
 
-
-  /* *** getter / setter *** */
-
-  public String getUserAgent() {
-    return userAgent;
-  }
-
-  public void setUserAgent(String userAgent) {
-    this.userAgent = userAgent;
-  }
-
-  public Path getTilePath() {
-    return tilePath;
-  }
-
-  public void setTilePath(Path tilePath) {
-    this.tilePath = tilePath;
-  }
-
-  public String getLayer() {
-    return layer;
-  }
-
-  public void setLayer(String layer) {
-    this.layer = layer;
-  }
-
-  public long getZ() {
-    return z;
-  }
-
-  public void setZ(long z) {
-    this.z = z;
-  }
-
-  public long getX() {
-    return x;
-  }
-
-  public void setX(long x) {
-    this.x = x;
-  }
-
-  public long getY() {
-    return y;
-  }
-
-  public void setY(long y) {
-    this.y = y;
-  }
-
-  public String getEnding() {
-    return ending;
-  }
-
-  public void setEnding(String ending) {
-    this.ending = ending;
-  }
 }

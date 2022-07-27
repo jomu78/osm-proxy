@@ -4,8 +4,13 @@
   <meta charset="UTF-8">
   <link rel="stylesheet" href="./webjars/openlayers/6.4.2/ol.css" type="text/css">
   <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+    }
+
     .map {
-      height: 800px;
+      height: 100%;
       width: 100%;
     }
   </style>
@@ -13,7 +18,7 @@
   <title>Simple Map</title>
 </head>
 <body>
-<div id="map" class="map" />
+<div id="map" class="map"></div>
 <script type="text/javascript">
   var map = new ol.Map({
     target: 'map',

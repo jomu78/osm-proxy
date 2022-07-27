@@ -22,7 +22,7 @@ import javax.annotation.PreDestroy;
 import javax.ejb.AccessTimeout;
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
-import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
 
 /**
  * @author joern.muehlencord
@@ -35,9 +35,11 @@ public class WildflyConnectionManager extends AbstractConnectionManager implemen
 
   @PostConstruct
   public void init() {
-    connectionManager = new PoolingHttpClientConnectionManager();
-    connectionManager.setMaxTotal(20);
-    connectionManager.setDefaultMaxPerRoute(2);
+    connectionManager = PoolingHttpClientConnectionManagerBuilder
+        .create()
+        .setMaxConnTotal(10)
+        .setMaxConnPerRoute(2)
+        .build();
   }
 
   @PreDestroy

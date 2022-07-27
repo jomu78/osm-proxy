@@ -44,6 +44,7 @@ public class OsmRestController {
   @GetMapping(value = "/rest/{layer}/{z}/{x}/{y}.{ending}", produces = { "image/png", "text/plain" })
   public ResponseEntity<Resource> getTile(
       final @RequestHeader("user-agent") String userAgent,
+      final @RequestHeader("accept") String acceptHeader,
       final @PathVariable("layer") String layer,
       final @PathVariable("z") Long z,
       final @PathVariable("x") Long x,
@@ -75,7 +76,7 @@ public class OsmRestController {
     Path tile = layerCacheFolder
         .resolve(z.toString())
         .resolve(x.toString())
-        .resolve(y.toString() + "." + ending);
+        .resolve(y + "." + ending);
 
     // make sure a valid user header is set - this is a requirement of the OpenStreeMap fair use policy
     // see https://operations.osmfoundation.org/policies/tiles/
@@ -86,8 +87,16 @@ public class OsmRestController {
       finalUserAgent = userAgent;
     }
 
+    String finalAcceptHeader;
+    if ((acceptHeader == null) || ("".equals(acceptHeader.trim()))) {
+      finalAcceptHeader = "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9";
+    } else {
+      finalAcceptHeader = acceptHeader;
+    }
+
     DownloadConfiguration downloadConfiguration = new DownloadConfiguration()
         .withUserAgent(finalUserAgent)
+        .withAcceptHeader(finalAcceptHeader)
         .withLayer(layer)
         .withTilePath(tile)
         .withZ(z)
@@ -111,8 +120,6 @@ public class OsmRestController {
           "error reading upstream servers from configuration", ex);
     }
 
-    HttpHeaders headers = new HttpHeaders();
-    headers.add("Access-Control-Allow-Origin", "*");
     ResponseEntity<Resource> response;
     // check if the tile exist
     // if yes and in retention time - serv it from disk
@@ -140,7 +147,6 @@ public class OsmRestController {
     try {
       image = ImageIO.read(tilePath.toFile());
     } catch (IOException ex) {
-
       logger.error("Cannot read image from file {}", tilePath);
       logger.debug(ex.getMessage(), ex);
     }
@@ -154,7 +160,6 @@ public class OsmRestController {
         ImageIO.write(image, "png", baos);
         imageData = baos.toByteArray();
       } catch (IOException ex) {
-        logger.debug(ex.toString(), ex);
         throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "error while reading tile from cache", ex);
       }
       logger.debug("served tile {}/{}/{}/{}.{} from cache", downloadConfiguration.getLayer(),
@@ -176,9 +181,7 @@ public class OsmRestController {
     try {
       fileDownloaded = connectionManager.downloadFromUpStreamServer(upstreamServers, downloadConfiguration);
     } catch (ConfigurationException ex) {
-      logger.error(ex.getMessage(), ex);
-      throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "error loading tile from upstream server",
-          ex);
+      throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "error loading tile from upstream server", ex);
     }
     if (fileDownloaded) {
       if (downloadConfiguration.getTilePath().toFile().exists()) {
@@ -187,8 +190,7 @@ public class OsmRestController {
         logger.error("tile {}/{}/{}/{}.{} downloaded, but not available in cache",
             downloadConfiguration.getLayer(), downloadConfiguration.getZ(), downloadConfiguration.getX(),
             downloadConfiguration.getY(), downloadConfiguration.getEnding());
-        throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-            "file downloaded but not available in cache");
+        throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "file downloaded but not available in cache");
       }
     } else {
       logger.debug("tile {}/{}/{}/{}.{} not downloaded", downloadConfiguration.getLayer(),
